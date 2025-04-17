@@ -1,0 +1,70 @@
+/* Reset de algunos estilos predeterminados */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Contenedor principal */
+.categorias-container {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 20px auto;
+}
+
+/* Título y párrafo */
+.categorias-container h2 {
+    color: #2c3e50;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.categorias-container p {
+    color: #7f8c8d;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+/* Lista de categorías */
+.categorias-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Tarjetas de cada categoría */
+.categoria-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 250px;  /* Tamaño fijo para las tarjetas */
+    transition: transform 0.3s ease;
+}
+
+.categoria-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Títulos de las categorías */
+.categoria-card h3 {
+    color: #2c3e50;
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+
+/* Estilo de las listas de ítems dentro de cada categoría */
+.categoria-card ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.categoria-card li {
+    font-size: 18px;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+}
