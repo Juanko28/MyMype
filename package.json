@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "start": "concurrently \"npm run electron\" \"npm run backend\"",
+  "electron": "electron .",
+  "backend": "python Backend/app.py"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "electron": "^35.1.2"
   }
 }
