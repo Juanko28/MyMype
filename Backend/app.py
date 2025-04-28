@@ -10,9 +10,12 @@ CORS(app)  # Permite peticiones desde Electron
 db = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="ClaveSegura123@",  # Cambiar por tu contraseña segura
+    password="AntonellaCedricLucca18",  # Cambiar por tu contraseña segura
     database="mype"
 )
+
+#password="ClaveSegura123@"
+#password="AntonellaCedricLucca18"
 
 # Ruta para iniciar sesión
 @app.route('/login', methods=['POST'])
@@ -36,13 +39,14 @@ def login():
 @app.route('/registro', methods=['POST'])
 def registro():
     data = request.get_json()
+    nombre= data.get('nombre')
     usuario = data.get('usuario')
     correo = data.get('correo')
     id_rol = data.get('id_rol')
     contrasena = data.get('contrasena')
 
     # Validar campos
-    if not (usuario and correo and id_rol and contrasena):
+    if not (nombre and usuario and correo and id_rol and contrasena):
         return jsonify({"status": "error", "mensaje": "Todos los campos son obligatorios."}), 400
 
     # Hash de la contraseña
@@ -51,10 +55,10 @@ def registro():
     try:
         cursor = db.cursor()
         query = """
-        INSERT INTO usuarios (nombre_usuario, contraseña_hash, correo, id_rol)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO usuarios (nombre_completo, nombre_usuario, contraseña_hash, correo, id_rol)
+        VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (usuario, hashed_password.decode('utf-8'), correo, id_rol))
+        cursor.execute(query, (nombre, usuario, hashed_password.decode('utf-8'), correo, id_rol))
         db.commit()
         return jsonify({"status": "ok", "mensaje": "Usuario registrado exitosamente."})
     except Exception as e:
