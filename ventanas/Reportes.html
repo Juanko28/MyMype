@@ -1,21 +1,14 @@
 <div class="reportes-container">
-    <h2>📊 Reportes</h2>
-    <p>Bienvenido a la sección de reportes. Aquí podrás ver estadísticas y registros importantes.</p>
+    <h2>Registrar Calzado</h2>
+    <form id="formProducto">
+        <input type="text" id="marca" placeholder="Marca" required>
+        <input type="text" id="modelo" placeholder="Modelo" required>
+        <input type="text" id="talla" placeholder="Talla (Ej. 42)" required>
+        <input type="text" id="color" placeholder="Color" required>
+        <input type="text" id="genero" placeholder="Género (Ej. Hombre, Mujer, Niño)" required>
+        <input type="number" id="stock" placeholder="Stock Inicial" required>
+        <input type="number" id="precio" placeholder="Precio (S/.)" step="0.01" required>
+        <button type="submit">Registrar</button>
+    </form>
 
-    <div class="report-card">
-        <h3>Productos más vendidos</h3>
-        <ul>
-            <li>Camisa Oversize - 120 ventas</li>
-            <li>Jean Slim Fit - 95 ventas</li>
-            <li>Zapatillas Urbanas - 88 ventas</li>
-        </ul>
-    </div>
-
-    <div class="report-card">
-        <h3>Inventario bajo</h3>
-        <ul>
-            <li>Gorra Negra - 2 unidades</li>
-            <li>Polera Roja - 4 unidades</li>
-        </ul>
-    </div>
 </div>
