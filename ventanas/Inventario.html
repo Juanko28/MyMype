@@ -1,6 +1,6 @@
 <h2>Inventario</h2>
 
-<input type="text" id="search" placeholder="Buscar producto..." onkeyup="buscarProducto()">
+<input type="text" id="search" placeholder="Buscar producto...">
 
 <table id="inventoryTable">
     <thead>
@@ -9,7 +9,6 @@
             <th>Producto</th>
             <th>Cantidad</th>
             <th>Precio</th>
-            <th>Acciones</th>
         </tr>
     </thead>
     <tbody id="inventoryBody">
@@ -18,16 +17,27 @@
             <td>Mouse Gamer</td>
             <td>15</td>
             <td>$25</td>
-            <td>
-                <button class="btn edit" onclick="editarFila(this)">Editar</button>
-                <button class="btn delete" onclick="eliminarFila(this)">Eliminar</button>
-            </td>
         </tr>
     </tbody>
 </table>
 
-<h3>Agregar Producto</h3>
-<input type="text" id="producto" placeholder="Nombre del producto">
-<input type="number" id="cantidad" placeholder="Cantidad">
-<input type="number" id="precio" placeholder="Precio">
-<button class="btn add" onclick="agregarProducto()">Agregar</button>
+<!-- Botón flotante para agregar nuevo movimiento -->
+<button id="btnAgregarProducto" class="floating-btn">➕</button>
+
+
+
+<script>
+    const { ipcRenderer } = require('electron');
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const boton = document.getElementById('btnAgregarProducto');
+        if (boton) {
+            boton.addEventListener('click', () => {
+                ipcRenderer.send('abrir-ventana-agregar-producto');
+            });
+        } else {
+            console.error("No se encontró el botón con ID btnAgregarProducto");
+        }
+    });
+</script>
+
