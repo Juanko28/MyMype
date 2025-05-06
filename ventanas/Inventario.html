@@ -25,19 +25,3 @@
 <button id="btnAgregarProducto" class="floating-btn">➕</button>
 
 
-
-<script>
-    const { ipcRenderer } = require('electron');
-
-    window.addEventListener('DOMContentLoaded', () => {
-        const boton = document.getElementById('btnAgregarProducto');
-        if (boton) {
-            boton.addEventListener('click', () => {
-                ipcRenderer.send('abrir-ventana-agregar-producto');
-            });
-        } else {
-            console.error("No se encontró el botón con ID btnAgregarProducto");
-        }
-    });
-</script>
-

@@ -2,113 +2,177 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agregar Productos</title>
+  <title>Formulario de Producto</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 40px;
+    }
+
+    .formulario, .tabla-container {
+      background: white;
       padding: 20px;
-      background: #f5f5f5;
+      max-width: 800px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
     }
-    h2 {
+
+    .formulario h2 {
       text-align: center;
-    }
-    .producto-item {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    input[type="text"], input[type="number"] {
-      padding: 8px;
-      width: 25%;
-      min-width: 120px;
-    }
-    button {
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-    #productos-container {
       margin-bottom: 20px;
     }
-    .btn-add {
+
+    .formulario label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .formulario input[type="text"],
+    .formulario input[type="number"],
+    .formulario input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .formulario button {
+      margin-top: 20px;
+      padding: 10px 16px;
+      width: 100%;
       background-color: #28a745;
       color: white;
       border: none;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
     }
-    .btn-remove {
-      background-color: #dc3545;
+
+    .formulario button:hover {
+      background-color: #218838;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .eliminar-btn {
+      background: #dc3545;
       color: white;
       border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 3px;
     }
-    .btn-submit {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      display: block;
-      margin: 0 auto;
+
+    .eliminar-btn:hover {
+      background: #c82333;
     }
   </style>
 </head>
 <body>
 
-  <h2>Agregar Productos</h2>
+  <form class="formulario" id="formProducto">
+    <h2>Registrar Producto</h2>
 
-  <div id="productos-container">
-    <div class="producto-item">
-      <input type="text" placeholder="Nombre del producto" name="producto[]">
-      <input type="number" placeholder="Cantidad" name="cantidad[]" min="1">
-      <input type="number" placeholder="Precio" name="precio[]" step="0.01" min="0">
-      <button class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
-    </div>
+    <label for="nombre">Nombre del Producto</label>
+    <input type="text" id="nombre" name="nombre" required>
+
+    <label for="genero">Género</label>
+    <input type="text" id="genero" name="genero" required>
+
+    <label for="marca">Marca</label>
+    <input type="text" id="marca" name="marca" required>
+
+    <label for="modelo">Modelo</label>
+    <input type="text" id="modelo" name="modelo" required>
+
+    <label for="talla">Talla(s)</label>
+    <input type="text" id="talla" name="talla" placeholder="p. ej. 32-36, 38" required>
+    <small style="color: #555;">Puedes ingresar un rango (32-36), varios valores (32,36) o combinaciones (32-34,36)</small>
+
+    <label for="color">Color</label>
+    <input type="text" id="color" name="color" required>
+
+    <label for="precio">Precio</label>
+    <input type="number" id="precio" name="precio" step="0.01" min="0" required>
+
+    <label for="cantidad">Cantidad</label>
+    <input type="number" id="cantidad" name="cantidad" min="1" required>
+
+    <label for="imagen">Imagen del Producto</label>
+    <input type="file" id="imagen" name="imagen" accept="image/*">
+
+    <button type="submit">Guardar Producto</button>
+  </form>
+
+  <div class="tabla-container">
+    <h2>Lista de Productos</h2>
+    <table id="tablaProductos">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Género</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Talla(s)</th>
+          <th>Color</th>
+          <th>Precio</th>
+          <th>Cantidad</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Productos agregados aquí -->
+      </tbody>
+    </table>
   </div>
 
-  <button class="btn-add" onclick="agregarProducto()">Agregar otro producto</button>
-  <br>
-  <button class="btn-submit" onclick="enviarProductos()">Guardar productos</button>
-
   <script>
-    function agregarProducto() {
-      const contenedor = document.getElementById('productos-container');
-      const item = document.createElement('div');
-      item.className = 'producto-item';
-      item.innerHTML = `
-        <input type="text" placeholder="Nombre del producto" name="producto[]">
-        <input type="number" placeholder="Cantidad" name="cantidad[]" min="1">
-        <input type="number" placeholder="Precio" name="precio[]" step="0.01" min="0">
-        <button class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+    const form = document.getElementById('formProducto');
+    const tabla = document.querySelector('#tablaProductos tbody');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      const fila = document.createElement('tr');
+
+      fila.innerHTML = `
+        <td>${formData.get("nombre")}</td>
+        <td>${formData.get("genero")}</td>
+        <td>${formData.get("marca")}</td>
+        <td>${formData.get("modelo")}</td>
+        <td>${formData.get("talla")}</td>
+        <td>${formData.get("color")}</td>
+        <td>${formData.get("precio")}</td>
+        <td>${formData.get("cantidad")}</td>
+        <td><button class="eliminar-btn">Eliminar</button></td>
       `;
-      contenedor.appendChild(item);
-    }
 
-    function eliminarProducto(btn) {
-      const item = btn.parentElement;
-      item.remove();
-    }
+      tabla.appendChild(fila);
+      form.reset();
 
-    function enviarProductos() {
-      const productos = document.querySelectorAll('.producto-item');
-      const data = [];
-
-      productos.forEach(p => {
-        const nombre = p.querySelector('input[name="producto[]"]').value.trim();
-        const cantidad = p.querySelector('input[name="cantidad[]"]').value;
-        const precio = p.querySelector('input[name="precio[]"]').value;
-
-        if (nombre && cantidad && precio) {
-          data.push({ nombre, cantidad, precio });
-        }
+      fila.querySelector(".eliminar-btn").addEventListener("click", () => {
+        fila.remove();
       });
-
-      if (data.length === 0) {
-        alert("Debes agregar al menos un producto completo.");
-        return;
-      }
-
-      // Aquí enviarías los datos al servidor (ejemplo: fetch, AJAX, etc.)
-      console.log("Productos a guardar:", data);
-      alert("Productos enviados con éxito.");
-    }
+    });
   </script>
 
 </body>

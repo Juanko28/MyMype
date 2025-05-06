@@ -10,7 +10,7 @@ CORS(app)  # Permite peticiones desde Electron
 db = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="ClaveSegura123@",  # Cambiar por tu contraseña segura
+    password="AntonellaCedricLucca18",  # Cambiar por tu contraseña segura
     database="mype"
 )
 

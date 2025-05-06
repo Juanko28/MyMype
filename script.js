@@ -27,3 +27,11 @@ function cargarVista(url) {
         })
         .catch(err => console.error("Error al cargar vista:", err));
 }
+
+// Escuchar delegadamente el clic del botón flotante, ya que puede no existir aún al cargar
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'btnAgregarProducto') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-agregar-producto');
+    }
+});
