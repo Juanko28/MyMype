@@ -35,7 +35,6 @@ def login():
         return jsonify({"status": "error", "mensaje": "Credenciales incorrectas"}), 401
 
 # Ruta para registrar un nuevo usuario
-# Ruta para registrar un nuevo usuario
 @app.route('/registro', methods=['POST'])
 def registro():
     data = request.get_json()
