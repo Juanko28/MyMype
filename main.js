@@ -41,4 +41,19 @@ app.whenReady().then(() => {
     ipcMain.on('login-exitoso', () => {
         mainWindow.loadFile('index.html');
     });
+
+    // 👉 Mueve este bloque AQUÍ dentro
+    ipcMain.on('abrir-ventana-agregar-producto', () => {
+        const ventanaAgregar = new BrowserWindow({
+            width: 500,
+            height: 600,
+            title: "Agregar Producto",
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            }
+        });
+
+        ventanaAgregar.loadFile('ventanas/NuevoMovimiento.html'); // Ajusta si tu archivo está en otra ruta
+    });
 });
