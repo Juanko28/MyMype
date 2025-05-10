@@ -22,11 +22,14 @@ function cargarVista(url) {
         .then(html => {
             document.getElementById("contenido-principal").innerHTML = html;
 
-            // Aquí podrías incluir lógica adicional si necesitas inicializar vistas específicas
-            // if (url.includes("Reportes")) { inicializarReportes(); }
+            // Re-ejecutar lógica para la vista de inventario
+            if (url.includes("Inventario")) {
+                inicializarInventario();
+            }
         })
         .catch(err => console.error("Error al cargar vista:", err));
 }
+
 
 // Escuchar delegadamente el clic del botón flotante, ya que puede no existir aún al cargar
 document.addEventListener('click', (e) => {
@@ -35,3 +38,42 @@ document.addEventListener('click', (e) => {
         ipcRenderer.send('abrir-ventana-agregar-producto');
     }
 });
+
+function inicializarInventario() {
+    const boton = document.getElementById('btnAgregarProducto');
+    if (boton) {
+        boton.addEventListener('click', () => {
+            ipcRenderer.send('abrir-ventana-agregar-producto');
+        });
+    }
+
+    async function cargarProductos() {
+        try {
+            const response = await fetch('http://localhost:5000/productos');
+            const productos = await response.json();
+
+            const tabla = document.getElementById('inventoryBody');
+            tabla.innerHTML = "";
+
+            productos.forEach(prod => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${prod.id_producto}</td>
+                    <td>${prod.nombre_producto}</td>
+                    <td>${prod.genero}</td>
+                    <td>${prod.marca}</td>
+                    <td>${prod.modelo}</td>
+                    <td>${prod.talla}</td>
+                    <td>${prod.stock_actual}</td>
+                    <td>$${parseFloat(prod.precio_unitario).toFixed(2)}</td>
+                `;
+                tabla.appendChild(fila);
+            });
+        } catch (error) {
+            console.error("Error al cargar productos:", error);
+            alert("No se pudieron cargar los productos.");
+        }
+    }
+
+    cargarProductos();
+}

@@ -74,5 +74,18 @@ def obtener_roles():
     roles = cursor.fetchall()
     return jsonify(roles)
 
+@app.route('/productos', methods=['GET'])
+def obtener_productos():
+    cursor = db.cursor(dictionary=True)
+    query = """
+        SELECT id_producto, nombre_producto, stock_actual, genero,
+               marca, modelo, color, talla, precio_unitario
+        FROM productos
+    """
+    cursor.execute(query)
+    productos = cursor.fetchall()
+    return jsonify(productos)
+
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
