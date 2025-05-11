@@ -45,8 +45,8 @@ app.whenReady().then(() => {
     // 👉 Mueve este bloque AQUÍ dentro
     ipcMain.on('abrir-ventana-agregar-producto', () => {
         const ventanaAgregar = new BrowserWindow({
-            width: 500,
-            height: 600,
+            width: 1300,
+            height: 1000,
             title: "Agregar Producto",
             webPreferences: {
                 nodeIntegration: true,
@@ -55,5 +55,20 @@ app.whenReady().then(() => {
         });
 
         ventanaAgregar.loadFile('ventanas/NuevoMovimiento.html'); // Ajusta si tu archivo está en otra ruta
+    });
+
+    // 👉 Mueve este bloque AQUÍ dentro ventana ventas
+    ipcMain.on('abrir-ventana-nueva-venta', () => {
+        const ventanaAgregar = new BrowserWindow({
+            width: 1300,
+            height: 1000,
+            title: "Nueva Venta",
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            }
+        });
+
+        ventanaAgregar.loadFile('ventanas/NuevaVenta.html'); // Ajusta si tu archivo está en otra ruta
     });
 });

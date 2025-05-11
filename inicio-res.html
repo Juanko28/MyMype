@@ -69,6 +69,7 @@
             const data = await response.json();
 
             if (response.ok) {
+                localStorage.setItem('id_usuario', data.id_usuario); 
                 ipcRenderer.send('login-exitoso');
             } else {
                 alert(data.mensaje);

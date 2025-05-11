@@ -6,8 +6,9 @@
     "start": "concurrently \"npm run electron\" \"npm run backend\"",
     "electron": "electron .",
     "backend": "python Backend/app.py",
-    "build": "electron-builder --dir"
+    "stop": "taskkill /IM python.exe /F"
   },
+
   "keywords": [],
   "author": "",
   "license": "ISC",

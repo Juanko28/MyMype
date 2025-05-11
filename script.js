@@ -26,6 +26,9 @@ function cargarVista(url) {
             if (url.includes("Inventario")) {
                 inicializarInventario();
             }
+            if (url.includes("Ventas")) {
+                inicializarVentas();
+            }
         })
         .catch(err => console.error("Error al cargar vista:", err));
 }
@@ -58,7 +61,6 @@ function inicializarInventario() {
             productos.forEach(prod => {
                 const fila = document.createElement('tr');
                 fila.innerHTML = `
-                    <td>${prod.id_producto}</td>
                     <td>${prod.nombre_producto}</td>
                     <td>${prod.genero}</td>
                     <td>${prod.marca}</td>
@@ -77,3 +79,42 @@ function inicializarInventario() {
 
     cargarProductos();
 }
+
+function inicializarVentas() {
+    const boton = document.getElementById('btnNuevaVenta');
+    if (boton) {
+        boton.addEventListener('click', () => {
+            ipcRenderer.send('abrir-ventana-nueva-venta');
+        });
+    }
+
+    async function cargarVentas() {
+        try {
+            const response = await fetch('http://localhost:5000/ventas'); // Asegúrate de tener esta ruta en tu backend
+            const ventas = await response.json();
+
+            const tabla = document.getElementById('ventasBody');
+            tabla.innerHTML = "";
+
+            ventas.forEach(venta => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${venta.id_venta}</td>
+                    <td>${new Date(venta.fecha_venta).toLocaleDateString()}</td>
+                    <td>${venta.nombre_producto}</td>
+                    <td>${venta.cantidad}</td>
+                    <td>$${parseFloat(venta.precio_unitario).toFixed(2)}</td>
+                    <td>$${parseFloat(venta.subtotal).toFixed(2)}</td>
+                    <td>$${parseFloat(venta.total_con_impuesto).toFixed(2)}</td>
+                `;
+                tabla.appendChild(fila);
+            });
+        } catch (error) {
+            console.error("Error al cargar ventas:", error);
+            alert("No se pudieron cargar las ventas.");
+        }
+    }
+
+    cargarVentas();
+}
+

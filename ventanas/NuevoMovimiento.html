@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <title>Formulario de Producto</title>
+  <title>Ingreso de Mercadería</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,17 +11,19 @@
       padding: 40px;
     }
 
-    .formulario, .tabla-container {
+    .formulario,
+    .tabla-container {
       background: white;
       padding: 20px;
-      max-width: 800px;
+      max-width: 1000px;
       margin: auto;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       margin-bottom: 30px;
     }
 
-    .formulario h2 {
+    .formulario h2,
+    .tabla-container h2 {
       text-align: center;
       margin-bottom: 20px;
     }
@@ -35,7 +38,7 @@
     .formulario input[type="number"],
     .formulario input[type="file"] {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -62,7 +65,8 @@
       border-collapse: collapse;
     }
 
-    th, td {
+    th,
+    td {
       padding: 10px;
       border: 1px solid #ccc;
       text-align: center;
@@ -84,96 +88,262 @@
     .eliminar-btn:hover {
       background: #c82333;
     }
+
+    .finalizar {
+      text-align: center;
+    }
+
+    .finalizar button {
+      padding: 12px 24px;
+      font-size: 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .finalizar button:hover {
+      background: #0056b3;
+    }
   </style>
 </head>
+
 <body>
 
   <form class="formulario" id="formProducto">
-    <h2>Registrar Producto</h2>
+    <h2>Registrar Producto al Movimiento</h2>
+
+    <label for="buscar">Buscar producto existente</label>
+    <input type="text" id="buscar" list="productos-lista" placeholder="Escribe nombre de producto...">
+    <datalist id="productos-lista"></datalist>
 
     <label for="nombre">Nombre del Producto</label>
-    <input type="text" id="nombre" name="nombre" required>
+    <input type="text" id="nombre" required>
 
     <label for="genero">Género</label>
-    <input type="text" id="genero" name="genero" required>
+    <input type="text" id="genero" required>
 
     <label for="marca">Marca</label>
-    <input type="text" id="marca" name="marca" required>
+    <input type="text" id="marca" required>
 
     <label for="modelo">Modelo</label>
-    <input type="text" id="modelo" name="modelo" required>
+    <input type="text" id="modelo" required>
 
     <label for="talla">Talla(s)</label>
-    <input type="text" id="talla" name="talla" placeholder="p. ej. 32-36, 38" required>
-    <small style="color: #555;">Puedes ingresar un rango (32-36), varios valores (32,36) o combinaciones (32-34,36)</small>
+    <input type="text" id="talla" placeholder="p. ej. 32-36, 38" required>
 
     <label for="color">Color</label>
-    <input type="text" id="color" name="color" required>
+    <input type="text" id="color" required>
 
     <label for="precio">Precio</label>
-    <input type="number" id="precio" name="precio" step="0.01" min="0" required>
+    <input type="number" id="precio" step="0.01" min="0" required>
 
     <label for="cantidad">Cantidad</label>
-    <input type="number" id="cantidad" name="cantidad" min="1" required>
+    <input type="number" id="cantidad" min="1" required>
 
-    <label for="imagen">Imagen del Producto</label>
-    <input type="file" id="imagen" name="imagen" accept="image/*">
-
-    <button type="submit">Guardar Producto</button>
+    <button type="submit">Agregar al Movimiento</button>
   </form>
 
   <div class="tabla-container">
-    <h2>Lista de Productos</h2>
+    <h2>Detalle del Movimiento</h2>
     <table id="tablaProductos">
       <thead>
         <tr>
           <th>Nombre</th>
-          <th>Género</th>
           <th>Marca</th>
           <th>Modelo</th>
-          <th>Talla(s)</th>
           <th>Color</th>
+          <th>Talla</th>
+          <th>Género</th>
           <th>Precio</th>
           <th>Cantidad</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <!-- Productos agregados aquí -->
+        <!-- Aquí se agregan productos -->
       </tbody>
     </table>
+  </div>
+
+  <div class="finalizar">
+    <button onclick="finalizarMovimiento()">Finalizar Movimiento de Ingreso</button>
   </div>
 
   <script>
     const form = document.getElementById('formProducto');
     const tabla = document.querySelector('#tablaProductos tbody');
+    const buscar = document.getElementById('buscar');
 
-    form.addEventListener('submit', function(e) {
+    let productosBD = [];
+
+    async function cargarProductosExistentes() {
+      try {
+        const res = await fetch('http://localhost:5000/productos');
+        productosBD = await res.json();
+
+        // Llenar datalist evitando duplicados
+        const datalist = document.getElementById('productos-lista');
+        datalist.innerHTML = '';
+        const valoresUnicos = new Set();
+        productosBD.forEach(prod => {
+          const texto = `${prod.nombre_producto} - ${prod.marca} - ${prod.modelo} - ${prod.genero}`;
+          if (!valoresUnicos.has(texto)) {
+            valoresUnicos.add(texto);
+            const option = document.createElement('option');
+            option.value = texto;
+            datalist.appendChild(option);
+          }
+        });
+
+      } catch (err) {
+        console.error("Error al cargar productos:", err);
+      }
+    }
+
+    // Rellenar campos al seleccionar producto
+    buscar.addEventListener('input', () => {
+      const inputText = buscar.value.trim().toLowerCase();
+
+      const producto = productosBD.find(p =>
+        `${p.nombre_producto} - ${p.marca} - ${p.modelo} - ${p.genero}`.toLowerCase() === inputText
+      );
+
+      if (producto) {
+        document.getElementById('nombre').value = producto.nombre_producto;
+        document.getElementById('marca').value = producto.marca;
+        document.getElementById('modelo').value = producto.modelo;
+        document.getElementById('color').value = producto.color;
+        document.getElementById('genero').value = producto.genero;
+        document.getElementById('talla').value = producto.talla;
+        document.getElementById('precio').value = producto.precio_unitario;
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
       e.preventDefault();
-      const formData = new FormData(form);
+
+      const data = {
+        nombre: document.getElementById('nombre').value,
+        genero: document.getElementById('genero').value,
+        marca: document.getElementById('marca').value,
+        modelo: document.getElementById('modelo').value,
+        talla: document.getElementById('talla').value,
+        color: document.getElementById('color').value,
+        precio: document.getElementById('precio').value,
+        cantidad: document.getElementById('cantidad').value
+      };
 
       const fila = document.createElement('tr');
-
       fila.innerHTML = `
-        <td>${formData.get("nombre")}</td>
-        <td>${formData.get("genero")}</td>
-        <td>${formData.get("marca")}</td>
-        <td>${formData.get("modelo")}</td>
-        <td>${formData.get("talla")}</td>
-        <td>${formData.get("color")}</td>
-        <td>${formData.get("precio")}</td>
-        <td>${formData.get("cantidad")}</td>
-        <td><button class="eliminar-btn">Eliminar</button></td>
-      `;
+      <td>${data.nombre}</td>
+      <td>${data.marca}</td>
+      <td>${data.modelo}</td>
+      <td>${data.color}</td>
+      <td>${data.talla}</td>
+      <td>${data.genero}</td>
+      <td>$${parseFloat(data.precio).toFixed(2)}</td>
+      <td contenteditable="true">${data.cantidad}</td>
+      <td><button class="eliminar-btn">Eliminar</button></td>
+    `;
 
+      fila.querySelector('.eliminar-btn').addEventListener('click', () => fila.remove());
       tabla.appendChild(fila);
       form.reset();
-
-      fila.querySelector(".eliminar-btn").addEventListener("click", () => {
-        fila.remove();
-      });
     });
+
+    function finalizarMovimiento() {
+      const filas = document.querySelectorAll('#tablaProductos tbody tr');
+      const productos = [];
+
+      const id_usuario = localStorage.getItem('id_usuario');
+      if (!id_usuario) {
+        alert("No se ha identificado el usuario.");
+        return;
+      }
+
+      filas.forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        productos.push({
+          nombre: celdas[0].innerText,
+          marca: celdas[1].innerText,
+          modelo: celdas[2].innerText,
+          color: celdas[3].innerText,
+          talla: celdas[4].innerText,
+          genero: celdas[5].innerText,
+          precio: celdas[6].innerText.replace('$', ''),
+          cantidad: celdas[7].innerText
+        });
+      });
+
+      console.log("Movimiento enviado:", productos);
+      alert("Movimiento registrado correctamente (simulado).");
+    }
+
+    cargarProductosExistentes();
+
+    async function finalizarMovimiento() {
+      const filas = document.querySelectorAll('#tablaProductos tbody tr');
+      const productos = [];
+
+      const id_usuario = localStorage.getItem('id_usuario');
+
+      if (!id_usuario) {
+        alert("No se ha identificado el usuario. Por favor inicia sesión.");
+        return;
+      }
+
+      filas.forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        productos.push({
+          nombre: celdas[0].innerText,
+          marca: celdas[1].innerText,
+          modelo: celdas[2].innerText,
+          color: celdas[3].innerText,
+          talla: celdas[4].innerText,
+          genero: celdas[5].innerText,
+          precio: celdas[6].innerText.replace('$', ''),
+          cantidad: celdas[7].innerText
+        });
+      });
+
+      if (productos.length === 0) {
+        alert("No hay productos en el movimiento.");
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/movimientos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            productos: productos,
+            id_usuario: id_usuario
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(data.mensaje);
+          document.querySelector('#tablaProductos tbody').innerHTML = '';
+        } else {
+          alert("Error: " + data.mensaje);
+        }
+
+      } catch (err) {
+        console.error("Error al enviar movimiento:", err);
+        alert("No se pudo completar el movimiento.");
+      }
+    }
+
+
   </script>
 
+
 </body>
+
 </html>
