@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registrar Venta</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 40px;
+    }
+
+    .formulario, .tabla-container {
+      background: white;
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .formulario h2, .tabla-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .formulario label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .formulario input[type="text"], .formulario input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .formulario button {
+      margin-top: 20px;
+      padding: 10px 16px;
+      width: 100%;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .formulario button:hover {
+      background-color: #218838;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    .eliminar-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .eliminar-btn:hover {
+      background: #c82333;
+    }
+
+    .finalizar {
+      text-align: center;
+    }
+
+    .finalizar button {
+      padding: 12px 24px;
+      font-size: 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .finalizar button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <form class="formulario" id="formVenta">
+    <h2>Agregar Producto a la Venta</h2>
+
+    <label for="buscar">Buscar producto existente</label>
+    <input type="text" id="buscar" list="productos-lista" placeholder="Escribe nombre de producto...">
+    <datalist id="productos-lista"></datalist>
+
+    <label for="nombre">Nombre del Producto</label>
+    <input type="text" id="nombre" required readonly>
+
+    <label for="precio">Precio Unitario</label>
+    <input type="number" id="precio" readonly required>
+
+    <label for="cantidad">Cantidad a vender</label>
+    <input type="number" id="cantidad" min="1" required>
+
+    <button type="submit">Agregar a la Venta</button>
+  </form>
+
+  <div class="tabla-container">
+    <h2>Detalle de la Venta</h2>
+    <table id="tablaProductos">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Cantidad</th>
+          <th>Precio Unitario</th>
+          <th>Subtotal</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Productos añadidos aquí -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="finalizar">
+    <button onclick="finalizarVenta()">Finalizar Venta</button>
+  </div>
+
+  <script>
+    const form = document.getElementById('formVenta');
+    const tabla = document.querySelector('#tablaProductos tbody');
+    const buscar = document.getElementById('buscar');
+    let productosBD = [];
+
+    async function cargarProductosExistentes() {
+      try {
+        const res = await fetch('http://localhost:5000/productos');
+        productosBD = await res.json();
+
+        const datalist = document.getElementById('productos-lista');
+        datalist.innerHTML = '';
+        productosBD.forEach(prod => {
+          const texto = `${prod.nombre_producto} - ${prod.marca} - ${prod.modelo} - ${prod.genero}`;
+          const option = document.createElement('option');
+          option.value = texto;
+          datalist.appendChild(option);
+        });
+      } catch (err) {
+        console.error("Error al cargar productos:", err);
+      }
+    }
+
+    buscar.addEventListener('input', () => {
+      const inputText = buscar.value.trim().toLowerCase();
+
+      const producto = productosBD.find(p =>
+        `${p.nombre_producto} - ${p.marca} - ${p.modelo} - ${p.genero}`.toLowerCase() === inputText
+      );
+      if (producto) {
+        document.getElementById('nombre').value = producto.nombre_producto;
+        document.getElementById('precio').value = producto.precio_unitario;
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const nombre = document.getElementById('nombre').value;
+      const cantidad = parseInt(document.getElementById('cantidad').value);
+      const precio = parseFloat(document.getElementById('precio').value);
+
+      if (!nombre || !cantidad || !precio) {
+        alert("Completa correctamente los campos.");
+        return;
+      }
+
+      const fila = document.createElement('tr');
+      fila.innerHTML = `
+        <td>${nombre}</td>
+        <td contenteditable="true">${cantidad}</td>
+        <td>$${precio.toFixed(2)}</td>
+        <td>$${(cantidad * precio).toFixed(2)}</td>
+        <td><button class="eliminar-btn">Eliminar</button></td>
+      `;
+
+      fila.querySelector('.eliminar-btn').addEventListener('click', () => fila.remove());
+      tabla.appendChild(fila);
+      form.reset();
+    });
+
+    async function finalizarVenta() {
+      const filas = document.querySelectorAll('#tablaProductos tbody tr');
+      const productos = [];
+
+      const id_usuario = localStorage.getItem('id_usuario');
+      if (!id_usuario) {
+        alert("No se ha identificado el usuario.");
+        return;
+      }
+
+      filas.forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        productos.push({
+          nombre: celdas[0].innerText,
+          cantidad: parseInt(celdas[1].innerText),
+          precio_unitario: parseFloat(celdas[2].innerText.replace('$', ''))
+        });
+      });
+
+      if (productos.length === 0) {
+        alert("Agrega al menos un producto.");
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/ventas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productos,
+            id_usuario
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert(data.mensaje);
+          document.querySelector('#tablaProductos tbody').innerHTML = '';
+        } else {
+          alert("Error: " + data.mensaje);
+        }
+      } catch (err) {
+        console.error("Error al enviar venta:", err);
+        alert("No se pudo completar la venta.");
+      }
+    }
+
+    cargarProductosExistentes();
+  </script>
+</body>
+</html>

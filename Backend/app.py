@@ -10,7 +10,7 @@ CORS(app)  # Permite peticiones desde Electron
 db = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="AntonellaCedricLucca18",  # Cambiar por tu contraseña segura
+    password="ClaveSegura123@",  # Cambiar por tu contraseña segura
     database="mype"
 )
 
@@ -86,17 +86,6 @@ def obtener_productos():
     productos = cursor.fetchall()
     return jsonify(productos)
 
-@app.route('/ventas', methods=['GET'])
-def obtener_ventas():
-    cursor = db.cursor(dictionary=True)
-    query = """
-        SELECT id_producto, nombre_producto, stock_actual, genero,
-               marca, modelo, color, talla, precio_unitario
-        FROM ventas
-    """
-    cursor.execute(query)
-    productos = cursor.fetchall()
-    return jsonify(productos)
 
 
 @app.route('/movimientos', methods=['POST'])
@@ -162,6 +151,101 @@ def registrar_movimiento():
         traceback.print_exc()
         db.rollback()
         return jsonify({'status': 'error', 'mensaje': 'Error al registrar el movimiento'}), 500
+    
+# Obtener solo ventas
+@app.route('/ventas', methods=['GET'])
+def obtener_ventas():
+    cursor = db.cursor(dictionary=True)
+    query = "SELECT id_venta, fecha_venta, total_con_impuesto FROM ventas ORDER BY fecha_venta DESC"
+    cursor.execute(query)
+    ventas = cursor.fetchall()
+    return jsonify(ventas)
+
+# Obtener detalle de una venta específica
+@app.route('/ventas/<int:id_venta>/detalle', methods=['GET'])
+def obtener_detalle_venta(id_venta):
+    cursor = db.cursor(dictionary=True)
+    query = """
+        SELECT 
+            p.nombre_producto,
+            p.marca,
+            p.modelo,
+            p.color,
+            p.talla,
+            p.genero,
+            dv.cantidad,
+            dv.precio_unitario,
+            dv.subtotal
+        FROM detalleventa dv
+        JOIN productos p ON dv.id_producto = p.id_producto
+        WHERE dv.id_venta = %s
+    """
+    cursor.execute(query, (id_venta,))
+    detalle = cursor.fetchall()
+    return jsonify(detalle)
+
+@app.route('/ventas', methods=['POST'])
+def registrar_venta():
+    data = request.get_json()
+    productos = data.get('productos')
+    id_usuario = data.get('id_usuario')
+
+    if not productos:
+        return jsonify({'status': 'error', 'mensaje': 'No se recibieron productos'}), 400
+
+    try:
+        cursor = db.cursor()
+
+        # Calcular totales
+        subtotal_total = sum(float(p['precio_unitario']) * int(p['cantidad']) for p in productos)
+
+        impuesto = 0.18  # 18%
+        total_con_impuesto = subtotal_total * (1 + impuesto)
+
+        # Insertar venta
+        cursor.execute("""
+            INSERT INTO ventas (id_usuario, total, impuesto_aplicado, total_con_impuesto)
+            VALUES (%s, %s, %s, %s)
+        """, (id_usuario, subtotal_total, 18.00, total_con_impuesto))
+        id_venta = cursor.lastrowid
+
+        # Insertar detalle de venta
+        for prod in productos:
+            cursor.execute("""
+                SELECT id_producto FROM productos WHERE nombre_producto = %s
+            """, (prod['nombre'],))
+            result = cursor.fetchone()
+            cursor.fetchall()  # Limpia cualquier resultado pendiente
+
+            if not result:
+                raise Exception(f"Producto {prod['nombre']} no encontrado")
+
+            id_producto = result[0]
+
+            cursor.execute("""
+                INSERT INTO detalleventa (id_venta, id_producto, cantidad, precio_unitario, subtotal)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                id_venta,
+                id_producto,
+                prod['cantidad'],
+                prod['precio_unitario'],
+                prod['cantidad'] * prod['precio_unitario']
+            ))
+
+            # Descontar del stock
+            cursor.execute("UPDATE productos SET stock_actual = stock_actual - %s WHERE id_producto = %s",
+                           (prod['cantidad'], id_producto))
+
+        db.commit()
+        return jsonify({'status': 'ok', 'mensaje': 'Venta registrada correctamente'})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        db.rollback()
+        return jsonify({'status': 'error', 'mensaje': 'Error al registrar la venta'}), 500
+
 
 print("Rutas disponibles:")
 for rule in app.url_map.iter_rules():

@@ -59,7 +59,7 @@ app.whenReady().then(() => {
 
     // 👉 Mueve este bloque AQUÍ dentro ventana ventas
     ipcMain.on('abrir-ventana-nueva-venta', () => {
-        const ventanaAgregar = new BrowserWindow({
+        const ventanaVenta = new BrowserWindow({
             width: 1300,
             height: 1000,
             title: "Nueva Venta",
@@ -69,6 +69,6 @@ app.whenReady().then(() => {
             }
         });
 
-        ventanaAgregar.loadFile('ventanas/NuevaVenta.html'); // Ajusta si tu archivo está en otra ruta
+        ventanaVenta.loadFile('ventanas/NuevaVenta.html'); // Ajusta si tu archivo está en otra ruta
     });
 });

@@ -80,6 +80,13 @@ function inicializarInventario() {
     cargarProductos();
 }
 
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'btnNuevaVenta') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-nueva-venta');
+    }
+});
+
 function inicializarVentas() {
     const boton = document.getElementById('btnNuevaVenta');
     if (boton) {
@@ -90,7 +97,7 @@ function inicializarVentas() {
 
     async function cargarVentas() {
         try {
-            const response = await fetch('http://localhost:5000/ventas'); // Asegúrate de tener esta ruta en tu backend
+            const response = await fetch('http://localhost:5000/ventas'); 
             const ventas = await response.json();
 
             const tabla = document.getElementById('ventasBody');
@@ -101,11 +108,8 @@ function inicializarVentas() {
                 fila.innerHTML = `
                     <td>${venta.id_venta}</td>
                     <td>${new Date(venta.fecha_venta).toLocaleDateString()}</td>
-                    <td>${venta.nombre_producto}</td>
-                    <td>${venta.cantidad}</td>
-                    <td>$${parseFloat(venta.precio_unitario).toFixed(2)}</td>
-                    <td>$${parseFloat(venta.subtotal).toFixed(2)}</td>
                     <td>$${parseFloat(venta.total_con_impuesto).toFixed(2)}</td>
+                    <td><button onclick="mostrarDetalle(${venta.id_venta}, this)">Ver Detalle</button></td>
                 `;
                 tabla.appendChild(fila);
             });
@@ -116,5 +120,62 @@ function inicializarVentas() {
     }
 
     cargarVentas();
+}
+
+// Función para mostrar el detalle al hacer clic en el botón
+async function mostrarDetalle(id_venta, btn) {
+    try {
+        const res = await fetch(`http://localhost:5000/ventas/${id_venta}/detalle`);
+        const detalles = await res.json();
+
+        let detalleHTML = `
+            <tr class="detalle">
+                <td colspan="4">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Color</th>
+                                <th>Talla</th>
+                                <th>Género</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+
+        detalles.forEach(d => {
+            detalleHTML += `
+                <tr>
+                    <td>${d.nombre_producto}</td>
+                    <td>${d.marca}</td>
+                    <td>${d.modelo}</td>
+                    <td>${d.color}</td>
+                    <td>${d.talla}</td>
+                    <td>${d.genero}</td>
+                    <td>${d.cantidad}</td>
+                    <td>$${parseFloat(d.precio_unitario).toFixed(2)}</td>
+                    <td>$${parseFloat(d.subtotal).toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        detalleHTML += `
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        `;
+
+        btn.closest('tr').insertAdjacentHTML('afterend', detalleHTML);
+        btn.disabled = true;
+    } catch (error) {
+        console.error("Error al cargar detalle de venta:", error);
+        alert("No se pudo cargar el detalle de la venta.");
+    }
 }
 
