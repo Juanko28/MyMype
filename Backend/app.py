@@ -10,7 +10,7 @@ CORS(app)  # Permite peticiones desde Electron
 db = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="ClaveSegura123@",  # Cambiar por tu contraseña segura
+    password="AntonellaCedricLucca18",  # Cambiar por tu contraseña segura
     database="mype"
 )
 
@@ -211,17 +211,18 @@ def registrar_venta():
 
         # Insertar detalle de venta
         for prod in productos:
-            cursor.execute("""
-                SELECT id_producto FROM productos WHERE nombre_producto = %s
-            """, (prod['nombre'],))
+            cursor.execute("SELECT id_producto, stock_actual FROM productos WHERE nombre_producto = %s", (prod['nombre'],))
             result = cursor.fetchone()
-            cursor.fetchall()  # Limpia cualquier resultado pendiente
 
             if not result:
                 raise Exception(f"Producto {prod['nombre']} no encontrado")
 
-            id_producto = result[0]
+            id_producto, stock_actual = result
 
+            if int(prod['cantidad']) > stock_actual:
+                raise Exception(f"No hay suficiente stock para el producto {prod['nombre']}. Stock disponible: {stock_actual}, solicitado: {prod['cantidad']}")
+
+            # Continuar con inserción si hay stock suficiente
             cursor.execute("""
                 INSERT INTO detalleventa (id_venta, id_producto, cantidad, precio_unitario, subtotal)
                 VALUES (%s, %s, %s, %s, %s)
@@ -235,7 +236,8 @@ def registrar_venta():
 
             # Descontar del stock
             cursor.execute("UPDATE productos SET stock_actual = stock_actual - %s WHERE id_producto = %s",
-                           (prod['cantidad'], id_producto))
+                        (prod['cantidad'], id_producto))
+
 
         db.commit()
         return jsonify({'status': 'ok', 'mensaje': 'Venta registrada correctamente'})

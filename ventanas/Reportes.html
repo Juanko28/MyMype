@@ -1,14 +1,11 @@
-<div class="reportes-container">
-    <h2>Registrar Calzado</h2>
-    <form id="formProducto">
-        <input type="text" id="marca" placeholder="Marca" required>
-        <input type="text" id="modelo" placeholder="Modelo" required>
-        <input type="text" id="talla" placeholder="Talla (Ej. 42)" required>
-        <input type="text" id="color" placeholder="Color" required>
-        <input type="text" id="genero" placeholder="Género (Ej. Hombre, Mujer, Niño)" required>
-        <input type="number" id="stock" placeholder="Stock Inicial" required>
-        <input type="number" id="precio" placeholder="Precio (S/.)" step="0.01" required>
-        <button type="submit">Registrar</button>
-    </form>
+<h1>📊 Reportes de Ventas e Inventario</h1>
 
+<div class="chart-container">
+  <h2>📈 Ventas por Día</h2>
+  <canvas id="ventasChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h2>📦 Inventario Actual</h2>
+  <canvas id="inventarioChart"></canvas>
 </div>

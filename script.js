@@ -29,6 +29,9 @@ function cargarVista(url) {
             if (url.includes("Ventas")) {
                 inicializarVentas();
             }
+            if (url.includes("Reportes.html")) {
+                inicializarReportes();
+            }
         })
         .catch(err => console.error("Error al cargar vista:", err));
 }
@@ -178,4 +181,74 @@ async function mostrarDetalle(id_venta, btn) {
         alert("No se pudo cargar el detalle de la venta.");
     }
 }
+
+async function inicializarReportes() {
+  try {
+    // Cargar ventas
+    const ventasRes = await fetch('http://localhost:5000/ventas');
+    const ventas = await ventasRes.json();
+
+    const resumen = {};
+    ventas.forEach(v => {
+      const fecha = new Date(v.fecha_venta).toLocaleDateString();
+      resumen[fecha] = (resumen[fecha] || 0) + parseFloat(v.total_con_impuesto);
+    });
+
+    const fechas = Object.keys(resumen);
+    const montos = Object.values(resumen);
+
+    const ventasCtx = document.getElementById('ventasChart').getContext('2d');
+    new Chart(ventasCtx, {
+      type: 'bar',
+      data: {
+        labels: fechas,
+        datasets: [{
+          label: 'Total vendido (S/)',
+          data: montos,
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // Cargar productos
+    const productosRes = await fetch('http://localhost:5000/productos');
+    const productos = await productosRes.json();
+
+    const nombres = productos.map(p => p.nombre_producto);
+    const stocks = productos.map(p => p.stock_actual);
+
+    const inventarioCtx = document.getElementById('inventarioChart').getContext('2d');
+    new Chart(inventarioCtx, {
+      type: 'pie',
+      data: {
+        labels: nombres,
+        datasets: [{
+          label: 'Stock',
+          data: stocks,
+          backgroundColor: nombres.map((_, i) =>
+            `hsl(${i * 30}, 70%, 60%)`
+          ),
+          borderColor: '#fff',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true
+      }
+    });
+
+  } catch (error) {
+    console.error("Error al cargar reportes:", error);
+    alert("No se pudieron cargar los reportes.");
+  }
+}
+
 
