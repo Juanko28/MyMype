@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "concurrently \"npm run electron\" \"npm run backend\"",
-    "electron": "electron .",
+    
+    "start": "concurrently \"npm run backend\" \"npm run electron\"",
     "backend": "python Backend/app.py",
+    "electron": "electron .",
+    
     "stop": "taskkill /IM python.exe /F",
     "build": "electron-builder"
 
