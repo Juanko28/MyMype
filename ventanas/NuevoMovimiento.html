@@ -134,7 +134,7 @@
     <input type="text" id="talla" placeholder="p. ej. 32-36, 38" required>
 
     <label for="color">Color</label>
-    <input type="text" id="color" required>
+    <input type="text" id="color" >
 
     <label for="precio">Precio</label>
     <input type="number" id="precio" step="0.01" min="0" required>
@@ -269,7 +269,7 @@
           nombre: celdas[0].innerText,
           marca: celdas[1].innerText,
           modelo: celdas[2].innerText,
-          color: celdas[3].innerText,
+          color: celdas[3].innerText.trim() || null,
           talla: celdas[4].innerText,
           genero: celdas[5].innerText,
           precio: celdas[6].innerText.replace('$', ''),

@@ -74,6 +74,19 @@ def obtener_roles():
     roles = cursor.fetchall()
     return jsonify(roles)
 
+@app.route('/tallas/<modelo>', methods=['GET'])
+def obtener_tallas(modelo):
+    cursor = db.cursor(dictionary=True)
+    query = """
+        SELECT DISTINCT talla 
+        FROM productos 
+        WHERE modelo = %s AND stock_actual <> 0
+    """
+    cursor.execute(query, (modelo,))
+    tallas = cursor.fetchall()
+    return jsonify(tallas)
+
+
 @app.route('/productos', methods=['GET'])
 def obtener_productos():
     cursor = db.cursor(dictionary=True)
@@ -196,11 +209,13 @@ def registrar_venta():
     try:
         cursor = db.cursor()
 
-        # Calcular totales
-        subtotal_total = sum(float(p['precio_unitario']) * int(p['cantidad']) for p in productos)
+        # Calcular subtotal total
+        subtotal_total = 0.0
+        for p in productos:
+            subtotal_total += float(p['precio_unitario']) * int(p['cantidad'])
 
-        impuesto = 0.18  # 18%
-        total_con_impuesto = subtotal_total * (1 + impuesto)
+        impuesto = 0.18
+        total_con_impuesto = round(subtotal_total * (1 + impuesto), 2)
 
         # Insertar venta
         cursor.execute("""
@@ -209,38 +224,47 @@ def registrar_venta():
         """, (id_usuario, subtotal_total, 18.00, total_con_impuesto))
         id_venta = cursor.lastrowid
 
-        # Insertar detalle de venta
         for prod in productos:
-            cursor.execute("SELECT id_producto, stock_actual FROM productos WHERE nombre_producto = %s", (prod['nombre'],))
-            result = cursor.fetchone()
+            modelo = prod['modelo']
+            talla = prod['talla']
+            cantidad = int(prod['cantidad'])
+            precio_unitario = float(prod['precio_unitario'])
+
+            # Buscar producto por modelo y talla
+            cursor_producto = db.cursor()
+            cursor_producto.execute(
+                "SELECT id_producto, stock_actual FROM productos WHERE modelo = %s AND talla = %s",
+                (modelo, talla)
+            )
+            result = cursor_producto.fetchone()
+            cursor_producto.close()
 
             if not result:
-                raise Exception(f"Producto {prod['nombre']} no encontrado")
+                db.rollback()
+                return jsonify({'status': 'error', 'mensaje': f"Producto con modelo '{modelo}' y talla '{talla}' no encontrado"}), 400
 
             id_producto, stock_actual = result
 
-            if int(prod['cantidad']) > stock_actual:
-                raise Exception(f"No hay suficiente stock para el producto {prod['nombre']}. Stock disponible: {stock_actual}, solicitado: {prod['cantidad']}")
+            if cantidad > stock_actual:
+                db.rollback()
+                return jsonify({
+                    'status': 'error',
+                    'mensaje': f"No hay suficiente stock para el modelo '{modelo}' talla '{talla}'. Disponible: {stock_actual}, solicitado: {cantidad}"
+                }), 400
 
-            # Continuar con inserción si hay stock suficiente
+            subtotal = round(precio_unitario * cantidad, 2)
+
             cursor.execute("""
                 INSERT INTO detalleventa (id_venta, id_producto, cantidad, precio_unitario, subtotal)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (
-                id_venta,
-                id_producto,
-                prod['cantidad'],
-                prod['precio_unitario'],
-                prod['cantidad'] * prod['precio_unitario']
-            ))
+            """, (id_venta, id_producto, cantidad, precio_unitario, subtotal))
 
-            # Descontar del stock
-            cursor.execute("UPDATE productos SET stock_actual = stock_actual - %s WHERE id_producto = %s",
-                        (prod['cantidad'], id_producto))
-
+            cursor.execute("""
+                UPDATE productos SET stock_actual = stock_actual - %s WHERE id_producto = %s
+            """, (cantidad, id_producto))
 
         db.commit()
-        return jsonify({'status': 'ok', 'mensaje': 'Venta registrada correctamente'})
+        return jsonify({'status': 'ok', 'mensaje': 'Venta registrada correctamente'}), 201
 
     except Exception as e:
         import traceback

@@ -114,11 +114,16 @@
     <label for="nombre">Nombre del Producto</label>
     <input type="text" id="nombre" required readonly>
 
-    <label for="precio">Precio Unitario</label>
-    <input type="number" id="precio" readonly required>
+    <label for="modelo">Modelo</label>
+    <input type="text" id="modelo"  required readonly>
 
-    <label for="cantidad">Cantidad a vender</label>
-    <input type="number" id="cantidad" min="1" required>
+    <label for="precio">Precio Unitario</label>
+    <input type="number" id="precio"  required>
+
+    <label for="talla">Talla:</label>
+    <select id="talla">
+      <option value="">Selecciona una talla</option>
+    </select>
 
     <button type="submit">Agregar a la Venta</button>
   </form>
@@ -129,6 +134,8 @@
       <thead>
         <tr>
           <th>Nombre</th>
+          <th>Modelo</th> 
+          <th>Talla</th>
           <th>Cantidad</th>
           <th>Precio Unitario</th>
           <th>Subtotal</th>
@@ -169,15 +176,36 @@
       }
     }
 
-    buscar.addEventListener('input', () => {
+    buscar.addEventListener('input', async () => {
       const inputText = buscar.value.trim().toLowerCase();
 
       const producto = productosBD.find(p =>
         `${p.nombre_producto} - ${p.marca} - ${p.modelo} - ${p.genero}`.toLowerCase() === inputText
       );
+
       if (producto) {
         document.getElementById('nombre').value = producto.nombre_producto;
         document.getElementById('precio').value = producto.precio_unitario;
+        document.getElementById('modelo').value = producto.modelo;
+        const modelo = producto.modelo;
+
+        try {
+          const res = await fetch(`http://localhost:5000/tallas/${modelo}`);
+          const tallas = await res.json();
+
+          const selectTalla = document.getElementById('talla');
+          selectTalla.innerHTML = '<option value="">Selecciona una talla</option>';
+
+          tallas.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.talla;
+            option.textContent = item.talla;
+            selectTalla.appendChild(option);
+          });
+        } catch (err) {
+          console.error("Error al cargar tallas:", err);
+          alert("No se pudieron cargar las tallas.");
+        }
       }
     });
 
@@ -185,27 +213,42 @@
       e.preventDefault();
 
       const nombre = document.getElementById('nombre').value;
-      const cantidad = parseInt(document.getElementById('cantidad').value);
+      const cantidad = 1;
       const precio = parseFloat(document.getElementById('precio').value);
+      const talla = document.getElementById('talla').value.trim();
+      const modelo = document.getElementById('modelo').value;
 
-      if (!nombre || !cantidad || !precio) {
-        alert("Completa correctamente los campos.");
+      if (!nombre || !cantidad || !precio || !talla) {
+        alert("Completa correctamente todos los campos, incluyendo la talla.");
+        return;
+      }
+
+      // Buscar modelo en productosBD para el producto con nombre seleccionado
+      const productoBD = productosBD.find(p => p.nombre_producto === nombre);
+
+      if (!modelo) {
+        alert("No se pudo encontrar el modelo del producto seleccionado.");
         return;
       }
 
       const fila = document.createElement('tr');
       fila.innerHTML = `
         <td>${nombre}</td>
-        <td contenteditable="true">${cantidad}</td>
-        <td>$${precio.toFixed(2)}</td>
+        <td>${modelo}</td>   <!-- Agrego modelo aquí -->
+        <td>${talla}</td>
+        <td>${cantidad}</td>
+        <td>$${precio.toFixed(2)}</td> 
         <td>$${(cantidad * precio).toFixed(2)}</td>
         <td><button class="eliminar-btn">Eliminar</button></td>
       `;
 
-      fila.querySelector('.eliminar-btn').addEventListener('click', () => fila.remove());
+      fila.querySelector('.eliminar-btn').addEventListener('click', () => {
+        fila.remove();
+      });
       tabla.appendChild(fila);
       form.reset();
     });
+
 
     async function finalizarVenta() {
       const filas = document.querySelectorAll('#tablaProductos tbody tr');
@@ -217,18 +260,33 @@
         return;
       }
 
-      filas.forEach(fila => {
-        const celdas = fila.querySelectorAll('td');
-        productos.push({
-          nombre: celdas[0].innerText,
-          cantidad: parseInt(celdas[1].innerText),
-          precio_unitario: parseFloat(celdas[2].innerText.replace('$', ''))
-        });
-      });
-
-      if (productos.length === 0) {
+      if (filas.length === 0) {
         alert("Agrega al menos un producto.");
         return;
+      }
+
+      for (const fila of filas) {
+        const celdas = fila.querySelectorAll('td');
+        const nombre = celdas[0].innerText;
+        const modelo = celdas[1].innerText;
+        const talla = celdas[2].innerText;
+        const cantidad = parseInt(celdas[3].innerText);
+        const precio_unitario = parseFloat(celdas[4].innerText.replace('$', ''));
+
+        const productoBD = productosBD.find(p => p.nombre_producto === nombre);
+
+        if (!modelo || !talla) {
+          alert(`Faltan datos para el producto: ${nombre}`);
+          return;
+        }
+
+        productos.push({
+          nombre,
+          talla,
+          cantidad,
+          precio_unitario,
+           modelo
+        });
       }
 
       try {

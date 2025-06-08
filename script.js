@@ -64,10 +64,10 @@ function inicializarInventario() {
             productos.forEach(prod => {
                 const fila = document.createElement('tr');
                 fila.innerHTML = `
-                    <td>${prod.nombre_producto}</td>
-                    <td>${prod.genero}</td>
                     <td>${prod.marca}</td>
                     <td>${prod.modelo}</td>
+                    <td>${prod.nombre_producto}</td>
+                    <td>${prod.genero}</td>                
                     <td>${prod.talla}</td>
                     <td>${prod.stock_actual}</td>
                     <td>$${parseFloat(prod.precio_unitario).toFixed(2)}</td>
@@ -127,6 +127,16 @@ function inicializarVentas() {
 
 // Función para mostrar el detalle al hacer clic en el botón
 async function mostrarDetalle(id_venta, btn) {
+     const filaVenta = btn.closest('tr');
+    const filaDetalle = filaVenta.nextElementSibling;
+
+    // Si el detalle ya está abierto, lo cerramos
+    if (filaDetalle && filaDetalle.classList.contains('detalle')) {
+        filaDetalle.remove();
+        btn.textContent = "Ver Detalle";
+        return;
+    }
+
     try {
         const res = await fetch(`http://localhost:5000/ventas/${id_venta}/detalle`);
         const detalles = await res.json();
@@ -140,7 +150,6 @@ async function mostrarDetalle(id_venta, btn) {
                                 <th>Producto</th>
                                 <th>Marca</th>
                                 <th>Modelo</th>
-                                <th>Color</th>
                                 <th>Talla</th>
                                 <th>Género</th>
                                 <th>Cantidad</th>
@@ -157,7 +166,6 @@ async function mostrarDetalle(id_venta, btn) {
                     <td>${d.nombre_producto}</td>
                     <td>${d.marca}</td>
                     <td>${d.modelo}</td>
-                    <td>${d.color}</td>
                     <td>${d.talla}</td>
                     <td>${d.genero}</td>
                     <td>${d.cantidad}</td>
@@ -175,7 +183,7 @@ async function mostrarDetalle(id_venta, btn) {
         `;
 
         btn.closest('tr').insertAdjacentHTML('afterend', detalleHTML);
-        btn.disabled = true;
+        btn.textContent = "Ocultar Detalle";
     } catch (error) {
         console.error("Error al cargar detalle de venta:", error);
         alert("No se pudo cargar el detalle de la venta.");

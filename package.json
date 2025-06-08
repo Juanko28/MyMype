@@ -9,7 +9,7 @@
     "electron": "electron .",
     
     "stop": "taskkill /IM python.exe /F",
-    "build": "electron-builder"
+    "build": "electron-builder" 
 
   },
 
