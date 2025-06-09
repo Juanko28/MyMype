@@ -15,6 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(err => console.error("Error al cargar navbar:", err));
 });
 
+ 
+
 // Función para cargar cualquier vista en el contenedor principal
 function cargarVista(url) {
     fetch(url)
@@ -39,20 +41,28 @@ function cargarVista(url) {
 
 // Escuchar delegadamente el clic del botón flotante, ya que puede no existir aún al cargar
 document.addEventListener('click', (e) => {
+
+    const { ipcRenderer } = require('electron');
+
+    document.getElementById('salirBtn').addEventListener('click', () => {
+    console.log('Botón de salir presionado');
+    ipcRenderer.send('cerrar-aplicacion');
+    });
     if (e.target && e.target.id === 'btnAgregarProducto') {
         const { ipcRenderer } = require('electron');
         ipcRenderer.send('abrir-ventana-agregar-producto');
     }
+    if (e.target && e.target.id === 'btnNuevaVenta') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-nueva-venta');
+    }
+    if (e.target && e.target.id === 'btnRerporteLogistico') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-reporte-logistico');
+    }
 });
 
 function inicializarInventario() {
-    const boton = document.getElementById('btnAgregarProducto');
-    if (boton) {
-        boton.addEventListener('click', () => {
-            ipcRenderer.send('abrir-ventana-agregar-producto');
-        });
-    }
-
     async function cargarProductos() {
         try {
             const response = await fetch('http://localhost:5000/productos');
@@ -83,20 +93,9 @@ function inicializarInventario() {
     cargarProductos();
 }
 
-document.addEventListener('click', (e) => {
-    if (e.target && e.target.id === 'btnNuevaVenta') {
-        const { ipcRenderer } = require('electron');
-        ipcRenderer.send('abrir-ventana-nueva-venta');
-    }
-});
+
 
 function inicializarVentas() {
-    const boton = document.getElementById('btnNuevaVenta');
-    if (boton) {
-        boton.addEventListener('click', () => {
-            ipcRenderer.send('abrir-ventana-nueva-venta');
-        });
-    }
 
     async function cargarVentas() {
         try {
@@ -124,6 +123,8 @@ function inicializarVentas() {
 
     cargarVentas();
 }
+
+
 
 // Función para mostrar el detalle al hacer clic en el botón
 async function mostrarDetalle(id_venta, btn) {

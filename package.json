@@ -29,7 +29,9 @@
       "output": "dist"
     },
     "files": [
-      "**/*"
+      "**/*",   
+      "!node_modules/*/{test,__tests__}/**",
+      "!**/*.map"
     ],
     "win": {
       "icon": "img/logo.ico",

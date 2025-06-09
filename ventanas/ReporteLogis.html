@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Costo Logístico Diario</title>
+    <style>
+        textarea {
+            resize: none; /* Evita que el usuario redimensione la caja */
+        }
+    </style>
+</head>
+<body>
+    <h2>Registrar Costo Logístico Diario</h2>
+
+    <form id="formCostoLogistico">
+        <label for="fecha_registro">Fecha de Registro:</label><br>
+        <input type="date" id="fecha_registro" name="fecha_registro" required><br><br>
+
+        <label for="costo_personal">Costo de Personal (S/.):</label><br>
+        <input type="number" id="costo_personal" name="costo_personal" step="0.01" required><br><br>
+
+        <label for="costo_servicios">Costo de Servicios (S/.):</label><br>
+        <input type="number" id="costo_servicios" name="costo_servicios" step="0.01" required><br><br>
+
+        <label for="costo_alquiler">Costo de Alquiler (S/.):</label><br>
+        <input type="number" id="costo_alquiler" name="costo_alquiler" step="0.01" required><br><br>
+
+        <label for="observaciones">Observaciones:</label><br>
+        <textarea id="observaciones" name="observaciones" rows="4" cols="50"></textarea><br><br>
+
+        <button type="submit" id="btnRegistrarPDF">Registrar y Descargar PDF</button>
+
+
+    </form>
+
+    <script>
+  const form = document.getElementById('formCostoLogistico');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // evitar submit tradicional
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('http://localhost:5000/registrar_costo_logistico', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.status === 'success') {
+        alert('Registro exitoso');
+        form.reset(); // Opcional: limpia el formulario
+      } else {
+        alert(result.mensaje || 'Error al registrar');
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  });
+</script>
+
+</body>
+</html>

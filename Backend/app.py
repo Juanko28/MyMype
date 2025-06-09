@@ -1,6 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+from fpdf import FPDF
+import os
+import io
+from reportlab.pdfgen import canvas
+from datetime import datetime
 import mysql.connector
+from datetime import date
+
 import bcrypt
 
 app = Flask(__name__)
@@ -271,6 +278,33 @@ def registrar_venta():
         traceback.print_exc()
         db.rollback()
         return jsonify({'status': 'error', 'mensaje': 'Error al registrar la venta'}), 500
+
+
+@app.route('/registrar_costo_logistico', methods=['POST'])
+def registrar_costo_logistico():
+    data = request.get_json()
+    fecha_registro = data.get("fecha_registro")
+    fecha_reporte = date.today()  # Fecha actual
+    personal = float(data.get("costo_personal"))
+    servicios = float(data.get("costo_servicios"))
+    alquiler = float(data.get("costo_alquiler"))
+    observaciones = data.get("observaciones")
+
+    try:
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO costo_logistico_diario (fecha_registro, fecha_reporte, costo_personal, costo_servicios, costo_alquiler, observaciones)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (fecha_registro, fecha_reporte, personal, servicios, alquiler, observaciones))
+        db.commit()
+
+        return jsonify({'status': 'success', 'mensaje': 'Costo logístico registrado correctamente.'})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        db.rollback()
+        return jsonify({'status': 'error', 'mensaje': 'Error al registrar costo logístico.'}), 500
 
 
 print("Rutas disponibles:")

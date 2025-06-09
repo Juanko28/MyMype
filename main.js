@@ -8,7 +8,7 @@ app.whenReady().then(() => {
     // Función para iniciar el backend de Python
     function startBackend() {
         const backendPath = path.join(__dirname, 'Backend', 'app.py');  // Ruta absoluta a app.py
-        exec(`python "${backendPath}"`, (error, stdout, stderr) => {
+        exec(`py "${backendPath}"`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error ejecutando el backend: ${error.message}`);
                 return;
@@ -26,7 +26,8 @@ app.whenReady().then(() => {
 
     mainWindow = new BrowserWindow({
         width: 1000,
-        height: 1000,
+        height: 900,
+        frame: false,
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true,
@@ -70,5 +71,37 @@ app.whenReady().then(() => {
         });
 
         ventanaVenta.loadFile('ventanas/NuevaVenta.html'); // Ajusta si tu archivo está en otra ruta
+    });
+
+    ipcMain.on('abrir-ventana-reporte-logistico', () => {
+        const ventanaVenta = new BrowserWindow({
+            width: 1300,
+            height: 1000,
+            title: "Reporte Lógistico",
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            }
+        });
+
+        ventanaVenta.loadFile('ventanas/ReporteLogis.html'); // Ajusta si tu archivo está en otra ruta
+    });
+
+    ipcMain.on('cerrar-aplicacion', () => {
+        console.log('Recibida señal para cerrar la app');
+
+        // Cerrar backend en Python (solo en Windows)
+        exec('taskkill /F /IM python.exe', (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error al cerrar Python: ${error.message}`);
+            }
+            if (stderr) {
+                console.error(`stderr al cerrar Python: ${stderr}`);
+            }
+            console.log(`stdout al cerrar Python: ${stdout}`);
+
+            // Cierra la app
+            app.quit();
+        });
     });
 });
