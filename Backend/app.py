@@ -7,7 +7,7 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 import mysql.connector
 from datetime import date
-
+    
 import bcrypt
 
 app = Flask(__name__)
@@ -45,31 +45,60 @@ def login():
 @app.route('/registro', methods=['POST'])
 def registro():
     data = request.get_json()
-    nombre= data.get('nombre')
+    nombre = data.get('nombre')
     usuario = data.get('usuario')
     correo = data.get('correo')
     id_rol = data.get('id_rol')
     contrasena = data.get('contrasena')
 
-    # Validar campos
-    if not (nombre and usuario and correo and id_rol and contrasena):
+    # Nuevos datos
+    dni = data.get('dni')
+    telefono = data.get('telefono')
+    direccion = data.get('direccion')
+    fecha_nacimiento = data.get('fecha_nacimiento')
+    salario = data.get('salario')
+    genero = data.get('genero')
+
+    if not all([nombre, usuario, correo, id_rol, contrasena, dni, telefono, direccion, fecha_nacimiento, salario, genero]):
         return jsonify({"status": "error", "mensaje": "Todos los campos son obligatorios."}), 400
 
-    # Hash de la contraseña
     hashed_password = bcrypt.hashpw(contrasena.encode('utf-8'), bcrypt.gensalt())
 
     try:
         cursor = db.cursor()
-        query = """
+
+        # Insertar en usuarios
+        insert_usuario = """
         INSERT INTO usuarios (nombre_completo, nombre_usuario, contraseña_hash, correo, id_rol)
         VALUES (%s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (nombre, usuario, hashed_password.decode('utf-8'), correo, id_rol))
+        cursor.execute(insert_usuario, (nombre, usuario, hashed_password.decode('utf-8'), correo, id_rol))
+
+        creado_por = data.get('creado_por')
+
+        # Dividir nombre
+        nombre_parts = nombre.split(" ", 1)
+        nombre_simple = nombre_parts[0]
+        apellido = nombre_parts[1] if len(nombre_parts) > 1 else ""
+
+        # Insertar en empleados
+        insert_empleado = """
+        INSERT INTO empleados (dn   i, nombre, apellido, correo, telefono, direccion, fecha_nacimiento, salario, genero, id_rol, creado_por)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_empleado, (
+            dni, nombre_simple, apellido, correo, telefono,
+            direccion, fecha_nacimiento, salario, genero,
+            id_rol, creado_por
+        ))
+
         db.commit()
-        return jsonify({"status": "ok", "mensaje": "Usuario registrado exitosamente."})
+        return jsonify({"status": "ok", "mensaje": "Usuario y empleado registrados exitosamente."})
+
     except Exception as e:
-        print('Error:', e)
-        return jsonify({"status": "error", "mensaje": "Error al registrar el usuario."}), 500
+        print('Error en el registro:', e)
+        db.rollback()
+        return jsonify({"status": "error", "mensaje": "Error al registrar."}), 500
 
 
 # Ruta para obtener los roles
@@ -307,6 +336,23 @@ def registrar_costo_logistico():
         return jsonify({'status': 'error', 'mensaje': 'Error al registrar costo logístico.'}), 500
 
 
+# Assuming you have a Product model
+@app.route('/api/total-cantidad', methods=['GET'])
+def get_total_cantidad():
+    try:
+        # Execute the SQL query directly using db.engine.execute()
+        result = db.engine.execute("""
+            SELECT
+                (SELECT IFNULL(SUM(stock_actual), 0) FROM mype.productos) +
+                (SELECT IFNULL(SUM(cantidad), 0) FROM mype.detalleventa) AS total_cantidad;
+        """).fetchone()
+        # Access the result
+        total_cantidad = result[0] if result else 0
+        return jsonify({'total_cantidad': total_cantidad}), 200
+    except Exception as e:
+        print(f"Error al obtener la cantidad total: {e}")
+        return jsonify({'error': 'Error interno del servidor al obtener la cantidad total.'}), 500
+        
 print("Rutas disponibles:")
 for rule in app.url_map.iter_rules():
     print(f"{rule.methods} - {rule.rule}")

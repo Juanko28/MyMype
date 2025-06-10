@@ -16,39 +16,11 @@
         <button onclick="iniciarSesion()">Entrar</button>
         <div class="toggle-link" onclick="mostrarRegistro()">¿No tienes cuenta? Regístrate</div>
     </div>
-
-    <!-- Formulario de Registro -->
-    <!-- Formulario de Registro -->
-    <div id="registerForm" style="display: none;">
-        <h2>Registro</h2>
-        <input type="text" id="regNombre" placeholder="Nombre completo">
-        <input type="text" id="regUser" placeholder="Usuario">
-        <input type="email" id="regEmail" placeholder="Correo electrónico">
-        
-        <select id="regRol">
-            <option value="">Seleccione un rol</option>
-        </select>
-
-        <input type="password" id="regPass" placeholder="Contraseña">
-        <button onclick="registrarse()">Registrar</button>
-        <div class="toggle-link" onclick="mostrarLogin()">¿Ya tienes cuenta? Inicia sesión</div>
-    </div>
     
 </div>
 
 <script>
     const { ipcRenderer } = require('electron');
-
-    function mostrarRegistro() {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('registerForm').style.display = 'block';
-        cargarRoles(); // ¡Cargar los roles cuando abran el formulario!
-    }
-
-    function mostrarLogin() {
-        document.getElementById('registerForm').style.display = 'none';
-        document.getElementById('loginForm').style.display = 'block';
-    }
 
     async function iniciarSesion() {
         const usuario = document.getElementById('loginUser').value;

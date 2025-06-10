@@ -87,6 +87,21 @@ app.whenReady().then(() => {
         ventanaVenta.loadFile('ventanas/ReporteLogis.html'); // Ajusta si tu archivo está en otra ruta
     });
 
+    ipcMain.on('abrir-ventana-crear-usuario', () => {
+        const ventanaVenta = new BrowserWindow({
+            width: 1300,
+            height: 1000,
+            title: "Usuario Nuevo",
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            }
+        });
+
+        ventanaVenta.loadFile('ventanas/Registro.html'); // Ajusta si tu archivo está en otra ruta
+    });
+
+
     ipcMain.on('cerrar-aplicacion', () => {
         console.log('Recibida señal para cerrar la app');
 

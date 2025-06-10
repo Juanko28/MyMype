@@ -5,8 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Costo Logístico Diario</title>
     <style>
-        textarea {
-            resize: none; /* Evita que el usuario redimensione la caja */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="month"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            width: 200px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        #tablaContainer {
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -14,54 +63,88 @@
     <h2>Registrar Costo Logístico Diario</h2>
 
     <form id="formCostoLogistico">
-        <label for="fecha_registro">Fecha de Registro:</label><br>
-        <input type="date" id="fecha_registro" name="fecha_registro" required><br><br>
-
-        <label for="costo_personal">Costo de Personal (S/.):</label><br>
-        <input type="number" id="costo_personal" name="costo_personal" step="0.01" required><br><br>
-
-        <label for="costo_servicios">Costo de Servicios (S/.):</label><br>
-        <input type="number" id="costo_servicios" name="costo_servicios" step="0.01" required><br><br>
-
-        <label for="costo_alquiler">Costo de Alquiler (S/.):</label><br>
-        <input type="number" id="costo_alquiler" name="costo_alquiler" step="0.01" required><br><br>
-
-        <label for="observaciones">Observaciones:</label><br>
-        <textarea id="observaciones" name="observaciones" rows="4" cols="50"></textarea><br><br>
+        <label for="mes">Mes:</label>
+        <input type="month" id="mes" name="mes" required>
 
         <button type="submit" id="btnRegistrarPDF">Registrar y Descargar PDF</button>
 
 
     </form>
-
+    <div id="tablaContainer">
+    </div>
     <script>
-  const form = document.getElementById('formCostoLogistico');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault(); // evitar submit tradicional
+        document.addEventListener('DOMContentLoaded', () => {
+            const formCostoLogistico = document.getElementById('formCostoLogistico');
+            const mesInput = document.getElementById('mes');
+            const tablaContainer = document.getElementById('tablaContainer');
 
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+            // URL de tu API de Flask
+            // ¡Asegúrate de que este sea el puerto correcto de tu Flask API!
+            const API_URL = 'http://localhost:5000/api/total-cantidad'; 
 
-    try {
-      const res = await fetch('http://localhost:5000/registrar_costo_logistico', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      });
+            // Función para obtener el total de la cantidad de la API
+            async function getTotalCantidadDesdeAPI() {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) {
+                        throw new Error(`Error de red: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    return data.total_cantidad;
+                } catch (error) {
+                    console.error('Error al obtener el total de cantidad desde la API:', error);
+                    return 'Error de carga'; // Devuelve un mensaje de error si falla la API
+                }
+            }
 
-      const result = await res.json();
+            // Función para crear la tabla de fechas solo para el mes indicado
+            async function crearTablaDeFechas(año, mesIndicado) {
+                const primerDiaMes = new Date(año, mesIndicado, 1);
+                let fechas = [];
+                let currentDay = primerDiaMes;
 
-      if (res.ok && result.status === 'success') {
-        alert('Registro exitoso');
-        form.reset(); // Opcional: limpia el formulario
-      } else {
-        alert(result.mensaje || 'Error al registrar');
-      }
-    } catch (error) {
-      alert('Error: ' + error.message);
-    }
-  });
-</script>
+                // Obtenemos el valor de la API una sola vez antes de construir la tabla
+                const totalCantidad = await getTotalCantidadDesdeAPI();
 
+                // Agregamos los días del mes indicado
+                while (currentDay.getMonth() === mesIndicado) {
+                    fechas.push(new Date(currentDay)); // Añade una copia de la fecha
+                    currentDay.setDate(currentDay.getDate() + 1); // Avanza al siguiente día
+                }
+
+                // Creamos la tabla sin la columna "Día de la Semana"
+                let tablaHTML = '<table><thead><tr><th>Fecha</th><th>Total Inventario (API)</th></tr></thead><tbody>';
+                fechas.forEach(fecha => {
+                    tablaHTML += `<tr>
+                                    <td>${fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                                    <td>${totalCantidad !== undefined ? totalCantidad : 'N/A'}</td>
+                                  </tr>`;
+                });
+                tablaHTML += '</tbody></table>';
+
+                return tablaHTML;
+            }
+
+            // Manejar el envío del formulario
+            formCostoLogistico.addEventListener('submit', async (event) => { 
+                event.preventDefault(); // Evita que el formulario se envíe de forma predeterminada
+
+                const mesValor = mesInput.value; // El valor es en formato "AAAA-MM"
+
+                if (mesValor) {
+                    const [añoStr, mesStr] = mesValor.split('-');
+                    const año = parseInt(añoStr, 10);
+                    // Los meses en Date son 0-indexados, por lo que restamos 1
+                    const mes = parseInt(mesStr, 10) - 1;
+
+                    // Esperamos a que la tabla se genere (incluyendo la llamada a la API)
+                    const tablaGenerada = await crearTablaDeFechas(año, mes);
+                    tablaContainer.innerHTML = tablaGenerada;
+                } else {
+                    tablaContainer.innerHTML = '<p>Por favor, selecciona un mes para generar la tabla.</p>';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

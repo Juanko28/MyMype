@@ -34,6 +34,9 @@ function cargarVista(url) {
             if (url.includes("Reportes.html")) {
                 inicializarReportes();
             }
+            if (url.includes("Configuracion.html")) {
+                //inicializarReportes();
+            }
         })
         .catch(err => console.error("Error al cargar vista:", err));
 }
@@ -59,6 +62,10 @@ document.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'btnRerporteLogistico') {
         const { ipcRenderer } = require('electron');
         ipcRenderer.send('abrir-ventana-reporte-logistico');
+    }
+    if (e.target && e.target.id === 'btnCrearUsuario') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-crear-usuario');
     }
 });
 
