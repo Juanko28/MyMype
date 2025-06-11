@@ -156,14 +156,15 @@ def registrar_movimiento():
 
         # Insertar productos y detalle
         for prod in productos:
-            nombre = prod['nombre']
-            marca = prod['marca']
-            modelo = prod['modelo']
-            color = prod['color']
-            talla = prod['talla']
-            genero = prod['genero']
-            precio = float(prod['precio'])
-            cantidad = int(prod['cantidad'])
+            nombre = prod.get('nombre')
+            marca = prod.get('marca')
+            modelo = prod.get('modelo')
+            color = prod.get('color')
+            talla = prod.get('talla')
+            genero = prod.get('genero')
+            precio = float(prod.get('precio', 0))
+            cantidad = int(prod.get('cantidad', 0))
+
 
             # Buscar si ya existe
             cursor.execute("""
@@ -352,7 +353,37 @@ def get_total_cantidad():
     except Exception as e:
         print(f"Error al obtener la cantidad total: {e}")
         return jsonify({'error': 'Error interno del servidor al obtener la cantidad total.'}), 500
-        
+
+from datetime import datetime
+
+@app.route('/api/ventas', methods=['GET'])
+def obtener_cantidad_ventas():
+    try:
+        cursor = db.cursor(dictionary=True)
+
+        query = """
+            SELECT 
+                v.fecha_venta AS fecha,
+                dv.cantidad
+            FROM mype.detalleventa dv
+            JOIN mype.ventas v ON dv.id_venta = v.id_venta
+            ORDER BY v.fecha_venta ASC
+        """
+        cursor.execute(query)
+        resultados = cursor.fetchall()
+
+        # Formatear fechas manualmente en Python
+        for r in resultados:
+            if isinstance(r["fecha"], datetime):
+                r["fecha"] = r["fecha"].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify(resultados), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": str(err)}), 500
+
+
+                           
 print("Rutas disponibles:")
 for rule in app.url_map.iter_rules():
     print(f"{rule.methods} - {rule.rule}")

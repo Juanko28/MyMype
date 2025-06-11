@@ -1,150 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Costo Logístico Diario</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        form {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        input[type="month"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            width: 200px;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        #tablaContainer {
-            margin-top: 30px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Tabla de Costos Logísticos</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #d6f5d6; }
+  </style>
 </head>
 <body>
-    <h2>Registrar Costo Logístico Diario</h2>
 
-    <form id="formCostoLogistico">
-        <label for="mes">Mes:</label>
-        <input type="month" id="mes" name="mes" required>
+  <h2>Base de datos general</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha de Registro</th>
+        <th>Ventas promedio del día (Cant.)</th>
+        <th>Inventario promedio (Cant.)</th>
+        <th>Rotación de inventarios (%)</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody id="tablaBody"></tbody>
+  </table>
 
-        <button type="submit" id="btnRegistrarPDF">Registrar y Descargar PDF</button>
+  <script>
+    // Inventario inicial
+    let inventarioTotal = 2340;
 
-
-    </form>
-    <div id="tablaContainer">
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const formCostoLogistico = document.getElementById('formCostoLogistico');
-            const mesInput = document.getElementById('mes');
-            const tablaContainer = document.getElementById('tablaContainer');
-
-            // URL de tu API de Flask
-            // ¡Asegúrate de que este sea el puerto correcto de tu Flask API!
-            const API_URL = 'http://localhost:5000/api/total-cantidad'; 
-
-            // Función para obtener el total de la cantidad de la API
-            async function getTotalCantidadDesdeAPI() {
-                try {
-                    const response = await fetch(API_URL);
-                    if (!response.ok) {
-                        throw new Error(`Error de red: ${response.statusText}`);
-                    }
-                    const data = await response.json();
-                    return data.total_cantidad;
-                } catch (error) {
-                    console.error('Error al obtener el total de cantidad desde la API:', error);
-                    return 'Error de carga'; // Devuelve un mensaje de error si falla la API
-                }
-            }
-
-            // Función para crear la tabla de fechas solo para el mes indicado
-            async function crearTablaDeFechas(año, mesIndicado) {
-                const primerDiaMes = new Date(año, mesIndicado, 1);
-                let fechas = [];
-                let currentDay = primerDiaMes;
-
-                // Obtenemos el valor de la API una sola vez antes de construir la tabla
-                const totalCantidad = await getTotalCantidadDesdeAPI();
-
-                // Agregamos los días del mes indicado
-                while (currentDay.getMonth() === mesIndicado) {
-                    fechas.push(new Date(currentDay)); // Añade una copia de la fecha
-                    currentDay.setDate(currentDay.getDate() + 1); // Avanza al siguiente día
-                }
-
-                // Creamos la tabla sin la columna "Día de la Semana"
-                let tablaHTML = '<table><thead><tr><th>Fecha</th><th>Total Inventario (API)</th></tr></thead><tbody>';
-                fechas.forEach(fecha => {
-                    tablaHTML += `<tr>
-                                    <td>${fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
-                                    <td>${totalCantidad !== undefined ? totalCantidad : 'N/A'}</td>
-                                  </tr>`;
-                });
-                tablaHTML += '</tbody></table>';
-
-                return tablaHTML;
-            }
-
-            // Manejar el envío del formulario
-            formCostoLogistico.addEventListener('submit', async (event) => { 
-                event.preventDefault(); // Evita que el formulario se envíe de forma predeterminada
-
-                const mesValor = mesInput.value; // El valor es en formato "AAAA-MM"
-
-                if (mesValor) {
-                    const [añoStr, mesStr] = mesValor.split('-');
-                    const año = parseInt(añoStr, 10);
-                    // Los meses en Date son 0-indexados, por lo que restamos 1
-                    const mes = parseInt(mesStr, 10) - 1;
-
-                    // Esperamos a que la tabla se genere (incluyendo la llamada a la API)
-                    const tablaGenerada = await crearTablaDeFechas(año, mes);
-                    tablaContainer.innerHTML = tablaGenerada;
-                } else {
-                    tablaContainer.innerHTML = '<p>Por favor, selecciona un mes para generar la tabla.</p>';
-                }
-            });
+    fetch('http://localhost:5000/api/ventas')
+      .then(response => response.json())
+      .then(ventasRaw => {
+        // Agrupar ventas por fecha (YYYY-MM-DD)
+        const ventasPorDia = {};
+        ventasRaw.forEach(v => {
+          const fecha = v.fecha.split(" ")[0];
+          const cantidad = parseInt(v.cantidad);
+          ventasPorDia[fecha] = (ventasPorDia[fecha] || 0) + cantidad;
         });
-    </script>
+
+        // Crear lista de días de abril 2025
+        const diasMes = [];
+        const anio = 2025;
+        const mes = 3; // abril
+        const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+        for (let i = 1; i <= diasEnMes; i++) {
+          const dia = i.toString().padStart(2, "0");
+          diasMes.push(`${anio}-04-${dia}`);
+        }
+
+        const cuerpoTabla = document.getElementById("tablaBody");
+        let inventarioActual = inventarioTotal;
+
+        diasMes.forEach((fecha) => {
+          const ventas = ventasPorDia[fecha] || 0;
+
+          // Guardamos el inventario antes de disminuir
+          const inventarioProm = inventarioActual;
+
+          // Cálculo de rotación
+          const rotacion = inventarioProm > 0 ? (ventas / inventarioProm) * 100 : 0;
+
+          // Observaciones
+          const obs = ventas === 0 ? "No se laboró." : "Ninguna";
+
+          // Disminuir inventario después de usar inventarioProm
+          inventarioActual -= ventas;
+
+          // Crear fila de tabla
+          const fila = `
+            <tr>
+              <td>${fecha}</td>
+              <td>${ventas}</td>
+              <td>${inventarioProm}</td>
+              <td>${rotacion.toFixed(4)}%</td>
+              <td>${obs}</td>
+            </tr>
+          `;
+          cuerpoTabla.innerHTML += fila;
+        });
+      })
+      .catch(error => {
+        console.error("Error al cargar los datos de ventas:", error);
+      });
+  </script>
+
 </body>
 </html>
