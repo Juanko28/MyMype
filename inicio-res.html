@@ -8,7 +8,6 @@
 <body>
 
 <div class="container">
-    <!-- Formulario de Inicio de Sesión -->
     <div id="loginForm">
         <h2>Iniciar Sesión</h2>
         <input type="text" id="loginUser" placeholder="Usuario">
@@ -95,14 +94,13 @@
         }
     }
 
-    // Función para cargar los roles en el select
     async function cargarRoles() {
         try {
             const response = await fetch('http://localhost:5000/roles');
             const roles = await response.json();
 
             const selectRol = document.getElementById('regRol');
-            selectRol.innerHTML = '<option value="">Seleccione un rol</option>'; // Reiniciar
+            selectRol.innerHTML = '<option value="">Seleccione un rol</option>'; 
 
             roles.forEach(rol => {
                 const option = document.createElement('option');

@@ -7,7 +7,6 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 import mysql.connector
 from datetime import date
-    
 import bcrypt
 
 app = Flask(__name__)
@@ -24,7 +23,7 @@ db = mysql.connector.connect(
 #password="ClaveSegura123@"
 #password="AntonellaCedricLucca18"
 
-# Ruta para iniciar sesión
+# Iniciar Sesión
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -41,7 +40,7 @@ def login():
     else:
         return jsonify({"status": "error", "mensaje": "Credenciales incorrectas"}), 401
 
-# Ruta para registrar un nuevo usuario
+# Registando nuevo usuario
 @app.route('/registro', methods=['POST'])
 def registro():
     data = request.get_json()
@@ -50,8 +49,6 @@ def registro():
     correo = data.get('correo')
     id_rol = data.get('id_rol')
     contrasena = data.get('contrasena')
-
-    # Nuevos datos
     dni = data.get('dni')
     telefono = data.get('telefono')
     direccion = data.get('direccion')
@@ -75,13 +72,12 @@ def registro():
         cursor.execute(insert_usuario, (nombre, usuario, hashed_password.decode('utf-8'), correo, id_rol))
 
         creado_por = data.get('creado_por')
-
-        # Dividir nombre
+        
         nombre_parts = nombre.split(" ", 1)
         nombre_simple = nombre_parts[0]
         apellido = nombre_parts[1] if len(nombre_parts) > 1 else ""
 
-        # Insertar en empleados
+        
         insert_empleado = """
         INSERT INTO empleados (dn   i, nombre, apellido, correo, telefono, direccion, fecha_nacimiento, salario, genero, id_rol, creado_por)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -101,7 +97,7 @@ def registro():
         return jsonify({"status": "error", "mensaje": "Error al registrar."}), 500
 
 
-# Ruta para obtener los roles
+#Los Roles
 @app.route('/roles', methods=['GET'])
 def obtener_roles():
     cursor = db.cursor(dictionary=True)
@@ -141,7 +137,7 @@ def obtener_productos():
 def registrar_movimiento():
     data = request.get_json()
     productos = data.get('productos')
-    id_usuario = data.get('id_usuario', 1)  # Puedes reemplazar esto con una sesión real
+    id_usuario = data.get('id_usuario', 1)  # falra arreglar esto DX
 
     if not productos:
         return jsonify({'status': 'error', 'mensaje': 'No se recibieron productos'}), 400
@@ -149,12 +145,10 @@ def registrar_movimiento():
     try:
         cursor = db.cursor()
 
-        # Insertar movimiento
         cursor.execute("INSERT INTO movimientos (tipo_movimiento, motivo, id_usuario) VALUES (%s, %s, %s)", 
                        ('entrada', 'Ingreso de mercadería', id_usuario))
         id_movimiento = cursor.lastrowid
-
-        # Insertar productos y detalle
+        
         for prod in productos:
             nombre = prod.get('nombre')
             marca = prod.get('marca')
@@ -164,9 +158,7 @@ def registrar_movimiento():
             genero = prod.get('genero')
             precio = float(prod.get('precio', 0))
             cantidad = int(prod.get('cantidad', 0))
-
-
-            # Buscar si ya existe
+        
             cursor.execute("""
                 SELECT id_producto FROM productos 
                 WHERE nombre_producto = %s AND marca = %s AND modelo = %s AND color = %s AND talla = %s AND genero = %s
@@ -174,19 +166,16 @@ def registrar_movimiento():
             result = cursor.fetchone()
 
             if result:
-                id_producto = result[0]
-                # Actualizar stock
+                id_producto = result[0] #Actiañzaaaaaaaaaar
                 cursor.execute("UPDATE productos SET stock_actual = stock_actual + %s WHERE id_producto = %s",
                                (cantidad, id_producto))
-            else:
-                # Insertar producto
-                cursor.execute("""
+            else: #Insertaaaaaaaaar
+                cursor.execute("""  
                     INSERT INTO productos (nombre_producto, marca, modelo, color, talla, genero, precio_unitario, stock_actual)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """, (nombre, marca, modelo, color, talla, genero, precio, cantidad))
                 id_producto = cursor.lastrowid
-
-            # Insertar en detalle
+      
             cursor.execute("""
                 INSERT INTO detallemovimiento (id_movimiento, id_producto, cantidad)
                 VALUES (%s, %s, %s)
@@ -202,7 +191,7 @@ def registrar_movimiento():
         db.rollback()
         return jsonify({'status': 'error', 'mensaje': 'Error al registrar el movimiento'}), 500
     
-# Obtener solo ventas
+# Jalar ventas
 @app.route('/ventas', methods=['GET'])
 def obtener_ventas():
     cursor = db.cursor(dictionary=True)
@@ -211,7 +200,7 @@ def obtener_ventas():
     ventas = cursor.fetchall()
     return jsonify(ventas)
 
-# Obtener detalle de una venta específica
+# Detalle de Venta
 @app.route('/ventas/<int:id_venta>/detalle', methods=['GET'])
 def obtener_detalle_venta(id_venta):
     cursor = db.cursor(dictionary=True)
@@ -246,7 +235,6 @@ def registrar_venta():
     try:
         cursor = db.cursor()
 
-        # Calcular subtotal total
         subtotal_total = 0.0
         for p in productos:
             subtotal_total += float(p['precio_unitario']) * int(p['cantidad'])
@@ -254,7 +242,6 @@ def registrar_venta():
         impuesto = 0.18
         total_con_impuesto = round(subtotal_total * (1 + impuesto), 2)
 
-        # Insertar venta
         cursor.execute("""
             INSERT INTO ventas (id_usuario, total, impuesto_aplicado, total_con_impuesto)
             VALUES (%s, %s, %s, %s)
@@ -267,7 +254,6 @@ def registrar_venta():
             cantidad = int(prod['cantidad'])
             precio_unitario = float(prod['precio_unitario'])
 
-            # Buscar producto por modelo y talla
             cursor_producto = db.cursor()
             cursor_producto.execute(
                 "SELECT id_producto, stock_actual FROM productos WHERE modelo = %s AND talla = %s",
@@ -309,52 +295,78 @@ def registrar_venta():
         db.rollback()
         return jsonify({'status': 'error', 'mensaje': 'Error al registrar la venta'}), 500
 
-
-@app.route('/registrar_costo_logistico', methods=['POST'])
-def registrar_costo_logistico():
-    data = request.get_json()
-    fecha_registro = data.get("fecha_registro")
-    fecha_reporte = date.today()  # Fecha actual
-    personal = float(data.get("costo_personal"))
-    servicios = float(data.get("costo_servicios"))
-    alquiler = float(data.get("costo_alquiler"))
-    observaciones = data.get("observaciones")
-
+# Sacando Total VEntas - REPORTE LOGISTICO
+@app.route('/api/costoLogis', methods=['GET'])
+def obtener_costo_total():
     try:
         cursor = db.cursor()
-        cursor.execute("""
-            INSERT INTO costo_logistico_diario (fecha_registro, fecha_reporte, costo_personal, costo_servicios, costo_alquiler, observaciones)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (fecha_registro, fecha_reporte, personal, servicios, alquiler, observaciones))
-        db.commit()
+        cursor.execute("SELECT salario FROM mype.empleados")
+        salarios = cursor.fetchall()
+        cursor.close()
 
-        return jsonify({'status': 'success', 'mensaje': 'Costo logístico registrado correctamente.'})
+        total_salarios = sum([float(s[0]) for s in salarios])
+
+        # estaticoos 
+        servicio = 15 #diario 
+        alquiler = 15 #diario
+
+        costo_total = total_salarios + servicio + alquiler
+
+        return jsonify({
+            'costo_total': costo_total
+        }), 200
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        db.rollback()
-        return jsonify({'status': 'error', 'mensaje': 'Error al registrar costo logístico.'}), 500
+        print(f"Error al obtener el costo total: {e}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@app.route('/api/ventas-totales', methods=['GET'])
+def obtener_total_ventas_por_fecha():
+    try:
+        cursor = db.cursor(dictionary=True)
+        query = """
+            SELECT 
+                fecha_venta AS fecha, 
+                total 
+            FROM mype.ventas
+            ORDER BY fecha_venta ASC
+        """
+        cursor.execute(query)
+        resultados = cursor.fetchall()  # <-- se leen todos los resultados
+        cursor.close()  # <-- se cierra el cursor
+
+        # Formatear fechas
+        for r in resultados:
+            if isinstance(r["fecha"], datetime):
+                r["fecha"] = r["fecha"].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify(resultados), 200
+
+    except Exception as err:
+        print(f"Error al obtener ventas: {err}")
+        return jsonify({"error": str(err)}), 500
 
 
-# Assuming you have a Product model
+# Sacando Total VEntas - REPORTE INVENTARIO
 @app.route('/api/total-cantidad', methods=['GET'])
 def get_total_cantidad():
     try:
-        # Execute the SQL query directly using db.engine.execute()
-        result = db.engine.execute("""
-            SELECT
-                (SELECT IFNULL(SUM(stock_actual), 0) FROM mype.productos) +
-                (SELECT IFNULL(SUM(cantidad), 0) FROM mype.detalleventa) AS total_cantidad;
-        """).fetchone()
-        # Access the result
-        total_cantidad = result[0] if result else 0
-        return jsonify({'total_cantidad': total_cantidad}), 200
+        cursor = db.cursor()
+
+        cursor.execute("SELECT IFNULL(SUM(stock_actual), 0) FROM mype.productos")
+        total_productos = cursor.fetchone()[0] or 0
+
+        cursor.execute("SELECT IFNULL(SUM(cantidad), 0) FROM mype.detalleventa")
+        total_detalleventa = cursor.fetchone()[0] or 0
+
+        cursor.close()
+
+        total = total_productos + total_detalleventa
+        return jsonify({'total_cantidad': total}), 200
     except Exception as e:
-        print(f"Error al obtener la cantidad total: {e}")
+        print("Error al obtener la cantidad total:", e)
         return jsonify({'error': 'Error interno del servidor al obtener la cantidad total.'}), 500
 
-from datetime import datetime
 
 @app.route('/api/ventas', methods=['GET'])
 def obtener_cantidad_ventas():
@@ -372,7 +384,7 @@ def obtener_cantidad_ventas():
         cursor.execute(query)
         resultados = cursor.fetchall()
 
-        # Formatear fechas manualmente en Python
+        # Gracias GPT
         for r in resultados:
             if isinstance(r["fecha"], datetime):
                 r["fecha"] = r["fecha"].strftime('%Y-%m-%d %H:%M:%S')

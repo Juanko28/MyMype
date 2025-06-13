@@ -59,13 +59,17 @@ document.addEventListener('click', (e) => {
         const { ipcRenderer } = require('electron');
         ipcRenderer.send('abrir-ventana-nueva-venta');
     }
-    if (e.target && e.target.id === 'btnRerporteLogistico') {
-        const { ipcRenderer } = require('electron');
-        ipcRenderer.send('abrir-ventana-reporte-logistico');
-    }
     if (e.target && e.target.id === 'btnCrearUsuario') {
         const { ipcRenderer } = require('electron');
         ipcRenderer.send('abrir-ventana-crear-usuario');
+    }
+    if (e.target && e.target.id === 'btnRerporteInventario') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-reporte-inventario');
+    }
+    if (e.target && e.target.id === 'btnRerporteLogistico') {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('abrir-ventana-reporte-logistico');
     }
 });
 

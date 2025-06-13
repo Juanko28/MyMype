@@ -222,8 +222,7 @@
         alert("Completa correctamente todos los campos, incluyendo la talla.");
         return;
       }
-
-      // Buscar modelo en productosBD para el producto con nombre seleccionado
+      
       const productoBD = productosBD.find(p => p.nombre_producto === nombre);
 
       if (!modelo) {

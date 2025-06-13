@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte de Costos Logísticos</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #d6f5d6; }
+    select, button { padding: 5px 10px; margin: 5px; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <h2>Reporte de Costos Logísticos</h2>
+    <label for="anio">Año:</label>
+  <select id="anio">
+    <option value="2024">2024</option>
+    <option value="2025" selected>2025</option>
+  </select>
+
+  <label for="mes">Mes:</label>
+  <select id="mes">
+    <option value="0">Enero</option>
+    <option value="1">Febrero</option>
+    <option value="2">Marzo</option>
+    <option value="3" selected>Abril</option>
+    <option value="4">Mayo</option>
+    <option value="5">Junio</option>
+    <option value="6">Julio</option>
+    <option value="7">Agosto</option>
+    <option value="8">Septiembre</option>
+    <option value="9">Octubre</option>
+    <option value="10">Noviembre</option>
+    <option value="11">Diciembre</option>
+  </select>
+  <button onclick="generarTabla()">Generar tabla</button>
+  <button onclick="generarPDF()">Exportar a PDF</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha de Registro</th>
+        <th>Costo logístico del día (s/.)</th>
+        <th>Venta Neta del día (s/.)</th>
+        <th>Costos logísticos como % de ventas</th>
+        <th>Observaciones</th>
+      </tr>
+    </thead>
+    <tbody id="tablaBody">
+      <!-- contenido dinámico -->
+    </tbody>
+  </table>
+
+  <script>
+async function generarTabla() {
+  const anio = parseInt(document.getElementById("anio").value);
+  const mes = parseInt(document.getElementById("mes").value);
+  const cuerpo = document.getElementById("tablaBody");
+  cuerpo.innerHTML = "";
+
+  try {
+    const [costoRes, ventasRes] = await Promise.all([
+      fetch("http://localhost:5000/api/costoLogis"),
+      fetch("http://localhost:5000/api/ventas-totales")
+    ]);
+
+    const { costo_total } = await costoRes.json();
+    const ventasRaw = await ventasRes.json();
+
+    // Sumar ventas por fecha
+    const ventasPorFecha = {};
+    ventasRaw.forEach(v => {
+      const fechaStr = v.fecha.split(" ")[0]; // YYYY-MM-DD
+      ventasPorFecha[fechaStr] = (ventasPorFecha[fechaStr] || 0) + parseFloat(v.total);
+    });
+
+    // Generar todas las fechas del mes
+    const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+    for (let d = 1; d <= diasEnMes; d++) {
+      const diaStr = d.toString().padStart(2, '0');
+      const mesStr = (mes + 1).toString().padStart(2, '0');
+      const fecha = `${anio}-${mesStr}-${diaStr}`;
+
+      const venta = ventasPorFecha[fecha] || 0;
+      const porcentaje = venta > 0 ? ((costo_total / venta) * 100).toFixed(2) : "100.00";
+      const obs = venta === 0 ? "No se laboró o no hubo ventas." : "Ninguna";
+
+      cuerpo.innerHTML += `
+        <tr>
+          <td>${fecha}</td>
+          <td>${costo_total.toFixed(2)}</td>
+          <td>${venta.toFixed(2)}</td>
+          <td>${porcentaje}%</td>
+          <td>${obs}</td>
+        </tr>
+      `;
+    }
+
+  } catch (error) {
+    console.error("Error al generar tabla:", error);
+    cuerpo.innerHTML = `<tr><td colspan="5">Error al cargar datos</td></tr>`;
+  }
+}
+
+async function generarPDF() {
+  const tabla = document.querySelector("table");
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  await html2canvas(tabla).then(canvas => {
+    const imgData = canvas.toDataURL("image/png");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+    pdf.save("reporte_costos_logisticos.pdf");
+  });
+}
+</script>
+
+</body>
+</html>

@@ -73,6 +73,20 @@ app.whenReady().then(() => {
         ventanaVenta.loadFile('ventanas/NuevaVenta.html'); // Ajusta si tu archivo está en otra ruta
     });
 
+    ipcMain.on('abrir-ventana-reporte-inventario', () => {
+        const ventanaVenta = new BrowserWindow({
+            width: 1300,
+            height: 1000,
+            title: "Reporte Lógistico",
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            }
+        });
+
+        ventanaVenta.loadFile('ventanas/ReporteRegistro.html'); // Ajusta si tu archivo está en otra ruta
+    });
+
     ipcMain.on('abrir-ventana-reporte-logistico', () => {
         const ventanaVenta = new BrowserWindow({
             width: 1300,
@@ -84,7 +98,7 @@ app.whenReady().then(() => {
             }
         });
 
-        ventanaVenta.loadFile('ventanas/ReporteLogis.html'); // Ajusta si tu archivo está en otra ruta
+        ventanaVenta.loadFile('ventanas/ReporteLogistico.html'); // Ajusta si tu archivo está en otra ruta
     });
 
     ipcMain.on('abrir-ventana-crear-usuario', () => {
