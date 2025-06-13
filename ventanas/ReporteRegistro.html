@@ -59,7 +59,6 @@
     let inventarioTotal = 0;
 
     function generarTabla() {
-      // Limpiar la tabla
       document.getElementById("tablaBody").innerHTML = "";
 
       const anio = parseInt(document.getElementById("anio").value);
@@ -134,7 +133,7 @@
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
       pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-      pdf.save("reporte_costos_logisticos.pdf");
+      pdf.save("reporte_inventario.pdf");
     });
     }
   </script>

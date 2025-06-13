@@ -74,7 +74,7 @@ async function generarTabla() {
     const { costo_total } = await costoRes.json();
     const ventasRaw = await ventasRes.json();
 
-    // Agrupar ventas por fecha (YYYY-MM-DD)
+    //  (YYYY-MM-DD)
     const ventasPorFecha = ventasRaw.reduce((acc, v) => {
       const fechaStr = v.fecha.split(" ")[0];
       const total = parseFloat(v.total);
