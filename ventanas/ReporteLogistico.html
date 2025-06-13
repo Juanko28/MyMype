@@ -63,23 +63,31 @@ async function generarTabla() {
   cuerpo.innerHTML = "";
 
   try {
+    // Obtener ambas fuentes de datos
     const [costoRes, ventasRes] = await Promise.all([
       fetch("http://localhost:5000/api/costoLogis"),
       fetch("http://localhost:5000/api/ventas-totales")
     ]);
 
+    if (!costoRes.ok || !ventasRes.ok) throw new Error("Error al obtener datos del servidor");
+
     const { costo_total } = await costoRes.json();
     const ventasRaw = await ventasRes.json();
 
-    // Sumar ventas por fecha
-    const ventasPorFecha = {};
-    ventasRaw.forEach(v => {
-      const fechaStr = v.fecha.split(" ")[0]; // YYYY-MM-DD
-      ventasPorFecha[fechaStr] = (ventasPorFecha[fechaStr] || 0) + parseFloat(v.total);
-    });
+    // Agrupar ventas por fecha (YYYY-MM-DD)
+    const ventasPorFecha = ventasRaw.reduce((acc, v) => {
+      const fechaStr = v.fecha.split(" ")[0];
+      const total = parseFloat(v.total);
+      if (!isNaN(total)) {
+        acc[fechaStr] = (acc[fechaStr] || 0) + total;
+      }
+      return acc;
+    }, {});
 
-    // Generar todas las fechas del mes
+    // Generar todas las fechas del mes seleccionado
     const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+    const filas = [];
+
     for (let d = 1; d <= diasEnMes; d++) {
       const diaStr = d.toString().padStart(2, '0');
       const mesStr = (mes + 1).toString().padStart(2, '0');
@@ -89,7 +97,7 @@ async function generarTabla() {
       const porcentaje = venta > 0 ? ((costo_total / venta) * 100).toFixed(2) : "100.00";
       const obs = venta === 0 ? "No se laboró o no hubo ventas." : "Ninguna";
 
-      cuerpo.innerHTML += `
+      filas.push(`
         <tr>
           <td>${fecha}</td>
           <td>${costo_total.toFixed(2)}</td>
@@ -97,11 +105,13 @@ async function generarTabla() {
           <td>${porcentaje}%</td>
           <td>${obs}</td>
         </tr>
-      `;
+      `);
     }
 
+    cuerpo.innerHTML = filas.join("");
+
   } catch (error) {
-    console.error("Error al generar tabla:", error);
+    console.error("Error al generar la tabla:", error);
     cuerpo.innerHTML = `<tr><td colspan="5">Error al cargar datos</td></tr>`;
   }
 }
@@ -122,6 +132,7 @@ async function generarPDF() {
   });
 }
 </script>
+
 
 </body>
 </html>

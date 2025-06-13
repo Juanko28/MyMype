@@ -1,0 +1,6 @@
+Flask
+flask-cors
+fpdf
+reportlab
+mysql-connector-python
+bcrypt
