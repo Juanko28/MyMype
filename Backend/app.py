@@ -326,25 +326,30 @@ def obtener_total_ventas_por_fecha():
         cursor = db.cursor(dictionary=True)
         query = """
             SELECT 
-                fecha_venta AS fecha, 
-                total 
+                DATE(fecha_venta) AS fecha,
+                SUM(total) as total
             FROM mype.ventas
-            ORDER BY fecha_venta ASC
+            GROUP BY 
+                DATE(fecha_venta)
+            ORDER BY 
+                fecha ASC;
+
         """
         cursor.execute(query)
-        resultados = cursor.fetchall()  # <-- se leen todos los resultados
-        cursor.close()  # <-- se cierra el cursor
+        resultados = cursor.fetchall()
+        cursor.close()
 
-        # Formatear fechas
+        # Formatear fechas (ya son tipo DATE, pero por si acaso)
         for r in resultados:
             if isinstance(r["fecha"], datetime):
-                r["fecha"] = r["fecha"].strftime('%Y-%m-%d %H:%M:%S')
+                r["fecha"] = r["fecha"].strftime('%Y-%m-%d')
 
         return jsonify(resultados), 200
 
-    except Exception as err:
-        print(f"Error al obtener ventas: {err}")
-        return jsonify({"error": str(err)}), 500
+    except Exception as e:
+        print("Error al obtener ventas:", e)
+        return jsonify({"error": "Error al obtener ventas"}), 500
+
 
 
 # Sacando Total VEntas - REPORTE INVENTARIO
