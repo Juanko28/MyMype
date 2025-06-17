@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte de Despachos</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #d6f5d6; }
+    select, button { padding: 5px 10px; margin: 5px; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>window.jsPDF = window.jspdf.jsPDF;</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <h2>Reporte de Costos Logísticos</h2>
+    <label for="anio">Año:</label>
+  <select id="anio">
+    <option value="2024">2024</option>
+    <option value="2025" selected>2025</option>
+  </select>
+
+  <label for="mes">Mes:</label>
+  <select id="mes">
+    <option value="0">Enero</option>
+    <option value="1">Febrero</option>
+    <option value="2">Marzo</option>
+    <option value="3" selected>Abril</option>
+    <option value="4">Mayo</option>
+    <option value="5">Junio</option>
+    <option value="6">Julio</option>
+    <option value="7">Agosto</option>
+    <option value="8">Septiembre</option>
+    <option value="9">Octubre</option>
+    <option value="10">Noviembre</option>
+    <option value="11">Diciembre</option>
+  </select>
+  <button onclick="generarTabla()">Generar tabla</button>
+  <button onclick="generarPDF()">Exportar a PDF</button>
+
+  <table>
+    <thead>
+      <tr>
+      <th>Fecha de Registro</th>
+      <th>Número de despachos cumplidos del día (Cant.)</th>
+      <th>Número total de despachos del día (Cant.)</th>
+      <th>Nivel de cumplimiento de despachos del día (%)</th>
+      <th>Observaciones</th>
+    </tr>
+    </thead>
+    <tbody id="tablaBody">
+      <!-- contenido dinámico -->
+    </tbody>
+  </table>
+
+  <script>
+  const datosDespachos = [
+    { fecha: "2025-04-01", cumplidos: 1, total: 2, observacion: "Ninguna." },
+    { fecha: "2025-04-02", cumplidos: 2, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-03", cumplidos: 2, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-04", cumplidos: 1, total: 2, observacion: "Ninguna." },
+    { fecha: "2025-04-05", cumplidos: 1, total: 3, observacion: "Ninguna." },
+    { fecha: "2025-04-06", cumplidos: 0, total: 2, observacion: "No hubo ventas." },
+    { fecha: "2025-04-07", cumplidos: 1, total: 2, observacion: "Ninguna." },
+    { fecha: "2025-04-08", cumplidos: 0, total: 3, observacion: "No hubo ventas." },
+    { fecha: "2025-04-09", cumplidos: 1, total: 2, observacion: "Ninguna." },
+    { fecha: "2025-04-10", cumplidos: 0, total: 4, observacion: "No hubo ventas." },
+    { fecha: "2025-04-11", cumplidos: 4, total: 5, observacion: "Ninguna." },
+    { fecha: "2025-04-12", cumplidos: 3, total: 5, observacion: "Ninguna." },
+    { fecha: "2025-04-13", cumplidos: 0, total: 4, observacion: "No hubo ventas." },
+    { fecha: "2025-04-14", cumplidos: 1, total: 5, observacion: "Ninguna." },
+    { fecha: "2025-04-15", cumplidos: 2, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-16", cumplidos: 1, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-17", cumplidos: 1, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-18", cumplidos: 0, total: 3, observacion: "No hubo ventas." },
+    { fecha: "2025-04-19", cumplidos: 4, total: 7, observacion: "Ninguna." },
+    { fecha: "2025-04-20", cumplidos: 0, total: 2, observacion: "No hubo ventas." },
+    { fecha: "2025-04-21", cumplidos: 3, total: 6, observacion: "Ninguna." },
+    { fecha: "2025-04-22", cumplidos: 2, total: 5, observacion: "Ninguna." },
+    { fecha: "2025-04-23", cumplidos: 0, total: 3, observacion: "No hubo ventas." },
+    { fecha: "2025-04-24", cumplidos: 1, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-25", cumplidos: 3, total: 6, observacion: "Ninguna." },
+    { fecha: "2025-04-26", cumplidos: 1, total: 3, observacion: "Ninguna." },
+    { fecha: "2025-04-27", cumplidos: 0, total: 2, observacion: "No hubo ventas." },
+    { fecha: "2025-04-28", cumplidos: 2, total: 5, observacion: "Ninguna." },
+    { fecha: "2025-04-29", cumplidos: 1, total: 4, observacion: "Ninguna." },
+    { fecha: "2025-04-30", cumplidos: 2, total: 4, observacion: "Ninguna." }
+  ];
+
+  function generarTabla() {
+    const cuerpo = document.getElementById("tablaBody");
+    cuerpo.innerHTML = "";
+
+    datosDespachos.forEach((d) => {
+      const porcentaje = d.total === 0 ? "0.000" : ((d.cumplidos / d.total) * 100).toFixed(3);
+
+      const fila = `
+        <tr>
+          <td>${d.fecha}</td>
+          <td>${d.cumplidos}</td>
+          <td>${d.total}</td>
+          <td>${porcentaje}%</td>
+          <td>${d.observacion}</td>
+        </tr>
+      `;
+      cuerpo.innerHTML += fila;
+    });
+  }
+async function generarPDF() {
+  const tabla = document.querySelector("table");
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  await html2canvas(tabla).then(canvas => {
+    const imgData = canvas.toDataURL("image/png");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+    pdf.save("reporte_despacho.pdf");
+  });
+}
+
+ window.onload = generarTabla;
+</script>
+
+
+</body>
+</html>
