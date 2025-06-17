@@ -1,8 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Tabla de Movimiento Inventario</title>
+  <title>Reporte de Costos Logísticos</title>
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
@@ -15,9 +16,8 @@
 </head>
 <body>
 
-  <h2>Base de datos general</h2>
-
-  <label for="anio">Año:</label>
+  <h2>Reporte de Costos Logísticos</h2>
+    <label for="anio">Año:</label>
   <select id="anio">
     <option value="2024">2024</option>
     <option value="2025" selected>2025</option>
@@ -38,7 +38,6 @@
     <option value="10">Noviembre</option>
     <option value="11">Diciembre</option>
   </select>
-
   <button onclick="generarTabla()">Generar tabla</button>
   <button onclick="generarPDF()">Exportar a PDF</button>
 
@@ -46,102 +45,98 @@
     <thead>
       <tr>
         <th>Fecha de Registro</th>
-        <th>Costo logístico del día (S/.)</th>
-        <th>Venta neta del día (S/.)</th>
-        <th>Costos logísticos como % de ventas</th>
+        <th>Ventas promedio del día (Cant.)</th>
+        <th>Inventario promedio (Cant.)</th>
+        <th>Rotación de inventarios (%)</th>
         <th>Observaciones</th>
       </tr>
     </thead>
-
-    <tbody id="tablaBody"></tbody>
+    <tbody id="tablaBody">
+      <!-- contenido dinámico -->
+    </tbody>
   </table>
 
   <script>
-  let costoLogistico = 0;
-  let ventasPorDia = {};
+    let inventarioTotal = 0;
 
-  async function generarTabla() {
-    document.getElementById("tablaBody").innerHTML = "";
+    function generarTabla() {
+      document.getElementById("tablaBody").innerHTML = "";
 
-    const anio = parseInt(document.getElementById("anio").value);
-    const mes = parseInt(document.getElementById("mes").value);
+      const anio = parseInt(document.getElementById("anio").value);
+      const mes = parseInt(document.getElementById("mes").value);
 
-    try {
-      // Obtener costo logístico fijo del backend
-      const costoRes = await fetch('http://localhost:5000/api/costoLogis');
-      const costoData = await costoRes.json();
-      costoLogistico = parseFloat(costoData.costo_total);
-
-      // Obtener ventas netas por fecha
-      const ventasRes = await fetch('http://localhost:5000/api/ventas-totales');
-      const ventasData = await ventasRes.json();
-
-      // Agrupar ventas por fecha (en formato YYYY-MM-DD)
-      ventasData.forEach(v => {
-        const fechaUTC = new Date(v.fecha);
-        const fechaFormateada = fechaUTC.toISOString().split("T")[0]; // "YYYY-MM-DD"
-        ventasPorDia[fechaFormateada] = parseFloat(v.total);
-      });
-
-      generarFilas(anio, mes);
-    } catch (error) {
-      console.error("Error al obtener datos:", error);
-    }
-  }
-
-  function generarFilas(anio, mes) {
-    const cuerpoTabla = document.getElementById("tablaBody");
-    const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-    let ventaAnterior = 0;
-
-    for (let i = 1; i <= diasEnMes; i++) {
-      const dia = i.toString().padStart(2, "0");
-      const mesTexto = (mes + 1).toString().padStart(2, "0");
-      const fecha = `${anio}-${mesTexto}-${dia}`;
-
-      let ventaNeta = ventasPorDia[fecha] || 0;
-      let observacion = "Ninguna";
-
-      if (ventaNeta === 0) {
-        if (ventaAnterior > 0) {
-          ventaNeta = ventaAnterior - costoLogistico;
-          observacion = "No hubo ventas. Se considera venta neta del día anterior menos gasto logístico.";
-        } else {
-          observacion = "No se trabajó y se usó lo de ayer.";
-        }
+          fetch('http://localhost:5000/api/total-cantidad')
+        .then(response => response.json())
+        .then(data => {
+          inventarioTotal = data.total_cantidad;
+          cargarVentas(anio, mes);
+        })
+        .catch(error => {
+          console.error("Error al obtener el inventario total:", error);
+        });
       }
 
-      const porcentaje = ventaNeta > 0 ? (costoLogistico / ventaNeta) * 100 : 0;
+      function cargarVentas(anio, mes) {
+      fetch('http://localhost:5000/api/ventas')
+        .then(response => response.json())
+        .then(ventasRaw => {
+          const ventasPorDia = {};
+          ventasRaw.forEach(v => {
+            const fecha = v.fecha.split(" ")[0];
+            const cantidad = parseInt(v.cantidad);
+            ventasPorDia[fecha] = (ventasPorDia[fecha] || 0) + cantidad;
+          });
 
-      const fila = `
-        <tr>
-          <td>${fecha}</td>
-          <td>${costoLogistico.toFixed(2)}</td>
-          <td>${ventaNeta.toFixed(2)}</td>
-          <td>${porcentaje.toFixed(2)}%</td>
-          <td>${observacion}</td>
-        </tr>
-      `;
-      cuerpoTabla.innerHTML += fila;
-      ventaAnterior = ventaNeta; // Guardar para el siguiente día
-    }
+          const diasMes = [];
+          const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+          for (let i = 1; i <= diasEnMes; i++) {
+            const dia = i.toString().padStart(2, "0");
+            const mesTexto = (mes + 1).toString().padStart(2, "0");
+            diasMes.push(`${anio}-${mesTexto}-${dia}`);
+          }
+
+          const cuerpoTabla = document.getElementById("tablaBody");
+          let inventarioActual = inventarioTotal;
+
+          diasMes.forEach((fecha) => {
+            const ventas = ventasPorDia[fecha] || 0;
+            const inventarioProm = inventarioActual;
+            const rotacion = inventarioProm > 0 ? (ventas / inventarioProm) * 100 : 0;
+            const obs = ventas === 0 ? "No se laboró." : "Ninguna";
+            inventarioActual -= ventas;
+
+            const fila = `
+              <tr>
+                <td>${fecha}</td>
+                <td>${ventas}</td>
+                <td>${inventarioProm}</td>
+                <td>${rotacion.toFixed(4)}%</td>
+                <td>${obs}</td>
+              </tr>
+            `;
+            cuerpoTabla.innerHTML += fila;
+          });
+        })
+        .catch(error => {
+          console.error("Error al cargar los datos de ventas:", error);
+        });
   }
 
-  async function generarPDF() {
-    const tabla = document.querySelector("table");
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
+async function generarPDF() {
+  const tabla = document.querySelector("table");
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
 
-    await html2canvas(tabla).then(canvas => {
-      const imgData = canvas.toDataURL("image/png");
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  await html2canvas(tabla).then(canvas => {
+    const imgData = canvas.toDataURL("image/png");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
-      pdf.save("reporte_logistico.pdf");
-    });
-  }
+    pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+    pdf.save("reporte_costos_logisticos.pdf");
+  });
+}
 </script>
 
 
